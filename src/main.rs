@@ -6,6 +6,34 @@ use std::ops::Add;
 use serde::de::Unexpected::Str;
 use serde::Deserialize;
 
+fn main() {
+    let contents = fs::read_to_string("./src/knapPI_1_100_1000_1").unwrap();
+
+    let files = contents.split("-----\r\n").collect::<Vec<&str>>();
+    for file in files {
+        let mut lines = file.lines();
+        let mut title = lines.next();
+        if title.unwrap().is_empty() {
+            title = lines.next();
+        }
+
+        if title.is_none() {
+            continue;
+        }
+        let title = title.unwrap();
+
+        let number = lines.next().unwrap();
+        let capacity = lines.next().unwrap().split("c").last().unwrap().trim().parse::<i64>().unwrap();
+        let optimal = lines.next().unwrap().split("z").last().unwrap().trim().parse::<i64>().unwrap();
+        lines.next();
+
+        let data = lines.collect::<Vec<&str>>();
+        println!("{}, {}", capacity, optimal)
+    }
+    // println!("{:?}", files.len())
+}
+
+
 #[derive(Debug, Deserialize)]
 struct Record {
     lo: i64,
@@ -20,7 +48,8 @@ struct Backpack {
     items: Vec<Record>,
 }
 
-fn main() {
+
+fn test() {
     let mut reader = csv::Reader::from_path("./src/knapPI_1_100_1000_1").unwrap();
     let mut data = reader.deserialize::<Record>().map(|val| {
         val.unwrap()
