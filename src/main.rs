@@ -3,22 +3,17 @@ use std::fs;
 use std::io::Read;
 use std::ops::Add;
 
+use charts::{Chart, ScaleBand, ScaleLinear, VerticalBarView};
 use serde::Deserialize;
 
 use magisterka_projekt::knapsack::algorithms::greedy::greedy_algorithm;
 use magisterka_projekt::knapsack::algorithms::types::SolveResult;
 use magisterka_projekt::knapsack::parsers::parsers::{parse_entry, DataSet, InstanceType, Record};
 
-#[derive(Debug)]
-struct Test {
-    value: f64,
-    instance_type: InstanceType,
-}
-
 fn main() {
     let folder = fs::read_dir("./src/knapsack/datasets").unwrap();
 
-    let mut values: Vec<Test> = Vec::new();
+    let mut values: Vec<SolveResult> = Vec::new();
     for file in folder {
         let path = file.unwrap().path();
         let contents = fs::read_to_string(path).unwrap();
@@ -34,57 +29,87 @@ fn main() {
         let mut results = data_sets
             .into_iter()
             .map(|set| greedy_algorithm(set))
-            .map(|result| Test {
-                value: result.ratio,
-                instance_type: result.instance_type,
-            })
-            .collect::<Vec<Test>>();
+            .collect::<Vec<SolveResult>>();
         values.append(&mut results);
     }
-    values.sort_by(|a, b| a.value.partial_cmp(&b.value).unwrap());
-    println!("{:?}", values)
-}
+    values = values
+        .into_iter()
+        .filter(|result| result.data_set.items_count == 1000)
+        .collect();
+    let uncorrelated = values
+        .iter()
+        .filter(|result| matches!(result.data_set.instance_type, InstanceType::Uncorrelated))
+        .collect::<Vec<&SolveResult>>();
+    let sum = uncorrelated
+        .iter()
+        .map(|result| result.ratio)
+        .reduce(f64::min)
+        .unwrap();
+    println!("average uncorr {}", sum);
 
-// fn test() {
-//     let mut reader = csv::Reader::from_path("./src/knapPI_1_100_1000_1").unwrap();
-//     let mut data = reader
-//         .deserialize::<Record>()
-//         .map(|val| val.unwrap())
-//         .collect::<Vec<Record>>();
-//
-//     data.sort_by(|a, b| {
-//         let val1: f64 = (a.value as f64 / a.weight as f64) as f64;
-//         let val2 = (b.value as f64 / b.weight as f64) as f64;
-//         val2.partial_cmp(&val1).unwrap()
-//     });
-//     let mut content = String::new();
-//     fs::File::open("./src/capacity.txt")
-//         .unwrap()
-//         .read_to_string(&mut content)
-//         .unwrap();
-//     let capacity: i64 = content.parse::<i64>().unwrap();
-//
-//     let mut backpack = Backpack {
-//         items: Vec::new(),
-//         weight: 0,
-//     };
-//
-//     for elem in data {
-//         if backpack.weight + elem.weight > capacity {
-//             continue;
-//         }
-//         backpack.weight = backpack.weight + elem.weight;
-//         backpack.items.push(elem);
-//     }
-//
-//     let optimal = fs::read_to_string("./src/optimal.txt")
-//         .unwrap()
-//         .parse::<i64>()
-//         .unwrap();
-//     println!("capacity left: {:?}", capacity - backpack.weight);
-//     let value = backpack.items.iter().map(|val| val.value).sum::<i64>();
-//     println!(
-//         "difference between optimal {:?}",
-//         (value as f64 / optimal as f64)
-//     );
-// }
+    let correlated = values
+        .iter()
+        .filter(|result| {
+            matches!(
+                result.data_set.instance_type,
+                InstanceType::StronglyCorrelated
+            )
+        })
+        .collect::<Vec<&SolveResult>>();
+    let sum = correlated
+        .iter()
+        .map(|result| result.ratio)
+        .reduce(f64::min)
+        .unwrap();
+    println!("average corr {}", sum);
+
+    // Define chart related sizes.
+    let width = 800;
+    let height = 600;
+    let (top, right, bottom, left) = (90, 40, 50, 60);
+
+    // Create a band scale that maps ["A", "B", "C"] categories to values in the [0, availableWidth]
+    // range (the width of the chart without the margins).
+    let x = ScaleBand::new()
+        .set_domain(vec![
+            String::from("A"),
+            String::from("B"),
+            String::from("C"),
+        ])
+        .set_range(vec![0, width - left - right])
+        .set_inner_padding(0.1)
+        .set_outer_padding(0.1);
+
+    // Create a linear scale that will interpolate values in [0, 100] range to corresponding
+    // values in [availableHeight, 0] range (the height of the chart without the margins).
+    // The [availableHeight, 0] range is inverted because SVGs coordinate system's origin is
+    // in top left corner, while chart's origin is in bottom left corner, hence we need to invert
+    // the range on Y axis for the chart to display as though its origin is at bottom left.
+    let y = ScaleLinear::new()
+        .set_domain(vec![0.0, 100.])
+        .set_range(vec![height - top - bottom, 0]);
+
+    // You can use your own iterable as data as long as its items implement the `BarDatum` trait.
+    let data = vec![("A", 90), ("B", 10), ("C", 30)];
+
+    // Create VerticalBar view that is going to represent the data as vertical bars.
+    let view = VerticalBarView::new()
+        .set_x_scale(&x)
+        .set_y_scale(&y)
+        .load_data(&data)
+        .unwrap();
+
+    // Generate and save the chart.
+    Chart::new()
+        .set_width(width)
+        .set_height(height)
+        .set_margins(top, right, bottom, left)
+        .add_title(String::from("Bar Chart"))
+        .add_view(&view)
+        .add_axis_bottom(&x)
+        .add_axis_left(&y)
+        .add_left_axis_label("Units of Measurement")
+        .add_bottom_axis_label("Categories")
+        .save("./src/vertical-bar-chart.svg")
+        .unwrap();
+}

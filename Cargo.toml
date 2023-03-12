@@ -6,5 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-csv="1.2.0"
+csv = "1.2.0"
 serde = { version = "1", features = ["derive"] }
+plotters = "0.3.4"
+charts = "0.3.0"

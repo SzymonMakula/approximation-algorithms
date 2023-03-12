@@ -1,9 +1,11 @@
-use crate::knapsack::parsers::parsers::InstanceType;
+use std::time::Duration;
+
+use crate::knapsack::parsers::parsers::{DataSet, InstanceType};
 
 #[derive(Debug)]
 pub struct SolveResult {
-    pub optimal: i64,
     pub result: i64,
     pub ratio: f64,
-    pub instance_type: InstanceType,
+    pub data_set: DataSet,
+    pub execution_time: Duration,
 }
