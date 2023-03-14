@@ -7,6 +7,7 @@ use crate::knapsack::parsers::parsers::{DataSet, Record};
 struct Backpack {
     weight: i64,
     items: Vec<Record>,
+    value: i64,
 }
 
 pub fn greedy_algorithm(data_set: DataSet) -> SolveResult {
@@ -22,16 +23,24 @@ pub fn greedy_algorithm(data_set: DataSet) -> SolveResult {
 
     let mut backpack = Backpack {
         items: Vec::new(),
+        value: 0,
         weight: 0,
     };
 
     for elem in records_clone {
         if backpack.weight + elem.weight > data_set.capacity {
-            continue;
+            if elem.value > backpack.value && elem.weight <= data_set.capacity {
+                backpack.weight = elem.weight;
+                backpack.value = elem.value;
+                backpack.items = vec![elem];
+            };
+            break;
         }
         backpack.weight = backpack.weight + elem.weight;
+        backpack.value = backpack.value + elem.value;
         backpack.items.push(elem);
     }
+
     let value = backpack.items.iter().map(|item| item.value).sum::<i64>();
     let ratio = value as f64 / data_set.optimal_value as f64;
     let elapsed = now.elapsed();

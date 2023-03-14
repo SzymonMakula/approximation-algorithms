@@ -1,16 +1,93 @@
+use std::cmp::Ordering;
 use std::collections::{vec_deque, HashMap};
 use std::fs;
 use std::io::Read;
 use std::ops::Add;
 
 use charts::{Chart, ScaleBand, ScaleLinear, VerticalBarView};
-use serde::Deserialize;
+use plotters::prelude::*;
+use plotters::style::full_palette::{BLUE_100, GREY, ORANGE};
 
 use magisterka_projekt::knapsack::algorithms::greedy::greedy_algorithm;
 use magisterka_projekt::knapsack::algorithms::types::SolveResult;
 use magisterka_projekt::knapsack::parsers::parsers::{parse_entry, DataSet, InstanceType, Record};
 
+fn get_instance_average(results: &Vec<SolveResult>, instance_type: InstanceType) -> f64 {
+    let uncorrelated_results_iter = results
+        .iter()
+        .filter(|result| matches!(&result.data_set.instance_type, instance_type))
+        .map(|result| result.ratio);
+    let len = uncorrelated_results_iter
+        .clone()
+        .collect::<Vec<f64>>()
+        .len();
+    uncorrelated_results_iter.sum::<f64>() / len as f64
+}
+
 fn main() {
+    let values = get_solve_results();
+
+    let root_area = BitMapBackend::new("src/2.7.png", (800, 600)).into_drawing_area();
+    root_area.fill(&WHITE).unwrap();
+
+    let total_len = values.len();
+    let mut ratios = values
+        .iter()
+        .map(|x| {
+            let values_before = values
+                .iter()
+                .map(|result| result.ratio)
+                .filter(|ratio| {
+                    let ratio = ratio.partial_cmp(&x.ratio).unwrap();
+                    match ratio {
+                        Ordering::Less => true,
+                        Ordering::Equal => true,
+                        Ordering::Greater => false,
+                    }
+                })
+                .collect::<Vec<f64>>();
+
+            let percentage = values_before.len() as f64 / total_len as f64;
+            (percentage, x.ratio)
+        })
+        .collect::<Vec<(f64, f64)>>();
+
+    ratios
+        .sort_by(|(a_percentage), (b_percentage)| a_percentage.partial_cmp(&b_percentage).unwrap());
+
+    let mut ctx = ChartBuilder::on(&root_area)
+        .set_label_area_size(LabelAreaPosition::Left, 40)
+        .set_label_area_size(LabelAreaPosition::Bottom, 40)
+        .caption("Scatter Demo", ("sans-serif", 40))
+        .build_cartesian_2d(0f64..1f64, 0.4f64..1f64)
+        .unwrap();
+
+    ctx.configure_mesh().draw().unwrap();
+
+    let total_len = values.len() as f64;
+
+    ctx.draw_series(values.iter().map(|x| {
+        let values_before = values
+            .iter()
+            .map(|result| result.ratio)
+            .filter(|ratio| {
+                let ratio = ratio.partial_cmp(&x.ratio).unwrap();
+                match ratio {
+                    Ordering::Less => true,
+                    Ordering::Equal => true,
+                    Ordering::Greater => false,
+                }
+            })
+            .collect::<Vec<f64>>();
+
+        let percentage = values_before.len() as f64 / total_len;
+        println!("{}", percentage);
+        Circle::new((percentage, x.ratio), 1, BLUE)
+    }))
+    .unwrap();
+}
+
+fn get_solve_results() -> Vec<SolveResult> {
     let folder = fs::read_dir("./src/knapsack/datasets").unwrap();
 
     let mut values: Vec<SolveResult> = Vec::new();
@@ -28,88 +105,9 @@ fn main() {
 
         let mut results = data_sets
             .into_iter()
-            .map(|set| greedy_algorithm(set))
+            .map(greedy_algorithm)
             .collect::<Vec<SolveResult>>();
         values.append(&mut results);
     }
-    values = values
-        .into_iter()
-        .filter(|result| result.data_set.items_count == 1000)
-        .collect();
-    let uncorrelated = values
-        .iter()
-        .filter(|result| matches!(result.data_set.instance_type, InstanceType::Uncorrelated))
-        .collect::<Vec<&SolveResult>>();
-    let sum = uncorrelated
-        .iter()
-        .map(|result| result.ratio)
-        .reduce(f64::min)
-        .unwrap();
-    println!("average uncorr {}", sum);
-
-    let correlated = values
-        .iter()
-        .filter(|result| {
-            matches!(
-                result.data_set.instance_type,
-                InstanceType::StronglyCorrelated
-            )
-        })
-        .collect::<Vec<&SolveResult>>();
-    let sum = correlated
-        .iter()
-        .map(|result| result.ratio)
-        .reduce(f64::min)
-        .unwrap();
-    println!("average corr {}", sum);
-
-    // Define chart related sizes.
-    let width = 800;
-    let height = 600;
-    let (top, right, bottom, left) = (90, 40, 50, 60);
-
-    // Create a band scale that maps ["A", "B", "C"] categories to values in the [0, availableWidth]
-    // range (the width of the chart without the margins).
-    let x = ScaleBand::new()
-        .set_domain(vec![
-            String::from("A"),
-            String::from("B"),
-            String::from("C"),
-        ])
-        .set_range(vec![0, width - left - right])
-        .set_inner_padding(0.1)
-        .set_outer_padding(0.1);
-
-    // Create a linear scale that will interpolate values in [0, 100] range to corresponding
-    // values in [availableHeight, 0] range (the height of the chart without the margins).
-    // The [availableHeight, 0] range is inverted because SVGs coordinate system's origin is
-    // in top left corner, while chart's origin is in bottom left corner, hence we need to invert
-    // the range on Y axis for the chart to display as though its origin is at bottom left.
-    let y = ScaleLinear::new()
-        .set_domain(vec![0.0, 100.])
-        .set_range(vec![height - top - bottom, 0]);
-
-    // You can use your own iterable as data as long as its items implement the `BarDatum` trait.
-    let data = vec![("A", 90), ("B", 10), ("C", 30)];
-
-    // Create VerticalBar view that is going to represent the data as vertical bars.
-    let view = VerticalBarView::new()
-        .set_x_scale(&x)
-        .set_y_scale(&y)
-        .load_data(&data)
-        .unwrap();
-
-    // Generate and save the chart.
-    Chart::new()
-        .set_width(width)
-        .set_height(height)
-        .set_margins(top, right, bottom, left)
-        .add_title(String::from("Bar Chart"))
-        .add_view(&view)
-        .add_axis_bottom(&x)
-        .add_axis_left(&y)
-        .add_left_axis_label("Units of Measurement")
-        .add_bottom_axis_label("Categories")
-        .save("./src/vertical-bar-chart.svg")
-        .unwrap();
+    values
 }
