@@ -1,113 +1,86 @@
-use std::cmp::Ordering;
-use std::collections::{vec_deque, HashMap};
+use std::cmp::max;
 use std::fs;
-use std::io::Read;
-use std::ops::Add;
-
-use charts::{Chart, ScaleBand, ScaleLinear, VerticalBarView};
-use plotters::prelude::*;
-use plotters::style::full_palette::{BLUE_100, GREY, ORANGE};
+use std::time::Instant;
 
 use magisterka_projekt::knapsack::algorithms::greedy::greedy_algorithm;
 use magisterka_projekt::knapsack::algorithms::types::SolveResult;
-use magisterka_projekt::knapsack::parsers::parsers::{parse_entry, DataSet, InstanceType, Record};
+use magisterka_projekt::knapsack::helpers::helpers::{
+    get_data_sets, get_solve_results, get_uncorrelated_data_set,
+};
+use magisterka_projekt::knapsack::parsers::parsers::DataSet;
 
-fn get_instance_average(results: &Vec<SolveResult>, instance_type: InstanceType) -> f64 {
-    let uncorrelated_results_iter = results
+fn pseudo_polynomial_knapsack(data_set: DataSet) -> SolveResult {
+    let now = Instant::now();
+
+    let records = &data_set.records;
+
+    let items_count = records.len();
+    let values = records
         .iter()
-        .filter(|result| matches!(&result.data_set.instance_type, instance_type))
-        .map(|result| result.ratio);
-    let len = uncorrelated_results_iter
-        .clone()
-        .collect::<Vec<f64>>()
-        .len();
-    uncorrelated_results_iter.sum::<f64>() / len as f64
+        .map(|record| record.value)
+        .collect::<Vec<i64>>();
+
+    let weights = records
+        .iter()
+        .map(|record| record.weight)
+        .collect::<Vec<i64>>();
+
+    let mut solutions: Vec<Vec<i64>> = vec![];
+
+    for _ in 0..items_count {
+        let mut vector = Vec::with_capacity(data_set.capacity as usize);
+        for _ in 0..data_set.capacity {
+            vector.push(0)
+        }
+        solutions.push(vector)
+    }
+
+    for n in 1..items_count {
+        for w in 1..data_set.capacity {
+            if weights[n] > w {
+                solutions[n][w as usize] = solutions[n - 1][w as usize]
+            } else {
+                solutions[n][w as usize] = max(
+                    solutions[n - 1][w as usize],
+                    solutions[n - 1][(w - weights[n]) as usize] + values[n],
+                )
+            }
+        }
+    }
+    let best = solutions
+        .into_iter()
+        .map(|solution| solution.into_iter().map(|val| val).max().unwrap())
+        .max()
+        .unwrap();
+
+    SolveResult {
+        ratio: best as f64 / data_set.optimal_value as f64,
+        data_set,
+        result: best,
+        execution_time: now.elapsed(),
+    }
 }
 
 fn main() {
-    let values = get_solve_results();
+    let data_sets = get_uncorrelated_data_set();
+    let data_set = data_sets.into_iter().nth(9).unwrap();
+    let solve = pseudo_polynomial_knapsack(data_set);
+    println!(
+        "best is {:?} and optimal is {} and time is {:?}",
+        solve.result, solve.data_set.optimal_value, solve.execution_time
+    );
+    // data_sets.into_iter().for_each(|data_set| {
+    //     let solve = pseudo_polynomial_knapsack(data_set);
+    //     println!(
+    //         "best is {:?} and optimal is {} and time is {:?}",
+    //         solve.result, solve.data_set.optimal_value, solve.execution_time
+    //     );
+    // })
 
-    let root_area = BitMapBackend::new("src/2.7.png", (800, 600)).into_drawing_area();
-    root_area.fill(&WHITE).unwrap();
-
-    let total_len = values.len();
-    let mut ratios = values
-        .iter()
-        .map(|x| {
-            let values_before = values
-                .iter()
-                .map(|result| result.ratio)
-                .filter(|ratio| {
-                    let ratio = ratio.partial_cmp(&x.ratio).unwrap();
-                    match ratio {
-                        Ordering::Less => true,
-                        Ordering::Equal => true,
-                        Ordering::Greater => false,
-                    }
-                })
-                .collect::<Vec<f64>>();
-
-            let percentage = values_before.len() as f64 / total_len as f64;
-            (percentage, x.ratio)
-        })
-        .collect::<Vec<(f64, f64)>>();
-
-    ratios
-        .sort_by(|(a_percentage), (b_percentage)| a_percentage.partial_cmp(&b_percentage).unwrap());
-
-    let mut ctx = ChartBuilder::on(&root_area)
-        .set_label_area_size(LabelAreaPosition::Left, 40)
-        .set_label_area_size(LabelAreaPosition::Bottom, 40)
-        .caption("Scatter Demo", ("sans-serif", 40))
-        .build_cartesian_2d(0f64..1f64, 0.4f64..1f64)
-        .unwrap();
-
-    ctx.configure_mesh().draw().unwrap();
-
-    let total_len = values.len() as f64;
-
-    ctx.draw_series(values.iter().map(|x| {
-        let values_before = values
-            .iter()
-            .map(|result| result.ratio)
-            .filter(|ratio| {
-                let ratio = ratio.partial_cmp(&x.ratio).unwrap();
-                match ratio {
-                    Ordering::Less => true,
-                    Ordering::Equal => true,
-                    Ordering::Greater => false,
-                }
-            })
-            .collect::<Vec<f64>>();
-
-        let percentage = values_before.len() as f64 / total_len;
-        println!("{}", percentage);
-        Circle::new((percentage, x.ratio), 1, BLUE)
-    }))
-    .unwrap();
-}
-
-fn get_solve_results() -> Vec<SolveResult> {
-    let folder = fs::read_dir("./src/knapsack/datasets").unwrap();
-
-    let mut values: Vec<SolveResult> = Vec::new();
-    for file in folder {
-        let path = file.unwrap().path();
-        let contents = fs::read_to_string(path).unwrap();
-
-        let files = contents.split("-----").collect::<Vec<&str>>();
-
-        let data_sets = files
-            .iter()
-            .map(|&entry| parse_entry(entry))
-            .filter_map(|entry| entry)
-            .collect::<Vec<DataSet>>();
-
-        let mut results = data_sets
-            .into_iter()
-            .map(greedy_algorithm)
-            .collect::<Vec<SolveResult>>();
-        values.append(&mut results);
-    }
-    values
+    // let a = solutions.len();
+    // println!(
+    //     "how many weights: {}, and how many items {}",
+    //     solutions[99].len(),
+    //     a
+    // )
 }
