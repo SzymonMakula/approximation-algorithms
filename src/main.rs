@@ -11,32 +11,32 @@ use magisterka_projekt::knapsack::parsers::parsers::DataSet;
 
 fn pseudo_polynomial_knapsack(data_set: DataSet) -> SolveResult {
     let now = Instant::now();
-
     let records = &data_set.records;
-
     let items_count = records.len();
-    let values = records
-        .iter()
-        .map(|record| record.value)
-        .collect::<Vec<i64>>();
 
-    let weights = records
+    let mut values: Vec<i64> = vec![];
+    values.push(0);
+    records.iter().for_each(|record| values.push(record.value));
+
+    let mut weights: Vec<i64> = vec![];
+    weights.push(0);
+
+    records
         .iter()
-        .map(|record| record.weight)
-        .collect::<Vec<i64>>();
+        .for_each(|record| weights.push(record.weight));
 
     let mut solutions: Vec<Vec<i64>> = vec![];
 
-    for _ in 0..items_count {
+    for _ in 0..=items_count {
         let mut vector = Vec::with_capacity(data_set.capacity as usize);
-        for _ in 0..data_set.capacity {
+        for _ in 0..=data_set.capacity {
             vector.push(0)
         }
         solutions.push(vector)
     }
 
-    for n in 1..items_count {
-        for w in 1..data_set.capacity {
+    for n in 1..=items_count {
+        for w in 0..=data_set.capacity {
             if weights[n] > w {
                 solutions[n][w as usize] = solutions[n - 1][w as usize]
             } else {
@@ -63,19 +63,19 @@ fn pseudo_polynomial_knapsack(data_set: DataSet) -> SolveResult {
 
 fn main() {
     let data_sets = get_uncorrelated_data_set();
-    let data_set = data_sets.into_iter().nth(9).unwrap();
-    let solve = pseudo_polynomial_knapsack(data_set);
-    println!(
-        "best is {:?} and optimal is {} and time is {:?}",
-        solve.result, solve.data_set.optimal_value, solve.execution_time
-    );
-    // data_sets.into_iter().for_each(|data_set| {
-    //     let solve = pseudo_polynomial_knapsack(data_set);
-    //     println!(
-    //         "best is {:?} and optimal is {} and time is {:?}",
-    //         solve.result, solve.data_set.optimal_value, solve.execution_time
-    //     );
-    // })
+    // let data_set = data_sets.into_iter().nth(9).unwrap();
+    // let solve = pseudo_polynomial_knapsack(data_set);
+    // println!(
+    //     "best is {:?} and optimal is {} and time is {:?}",
+    //     solve.result, solve.data_set.optimal_value, solve.execution_time
+    // );
+    data_sets.into_iter().for_each(|data_set| {
+        let solve = pseudo_polynomial_knapsack(data_set);
+        println!(
+            "best is {:?} and optimal is {} and time is {:?}",
+            solve.result, solve.data_set.optimal_value, solve.execution_time
+        );
+    })
 
     // let a = solutions.len();
     // println!(
