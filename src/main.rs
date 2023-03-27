@@ -61,26 +61,67 @@ fn pseudo_polynomial_knapsack(data_set: DataSet) -> SolveResult {
     }
 }
 
+fn dynamic_programming_knapsack(data_set: DataSet) {
+    let mut records = &data_set.records;
+    let first_item = &records[0];
+
+    let mut A = vec![];
+    let first_entry = vec![(0, 0), (first_item.weight, first_item.value)];
+    A.push(first_entry);
+
+    for j in 1..records.len() {
+        A.push(A[j - 1].clone());
+        for (weight, value) in &A[j - 1].clone() {
+            if weight + records[j].weight <= data_set.capacity {
+                A[j].push((weight + records[j].weight, value + records[j].value))
+            }
+        }
+        A[j].sort_by_key(|&(space, value)| (space, std::cmp::Reverse(value)));
+
+        // Keep the non-dominated pairs
+        let mut result: Vec<(i64, i64)> = vec![];
+        for (space, value) in A[j].clone() {
+            if result.is_empty() || value > result.last().unwrap().1 {
+                result.push((space, value));
+            }
+        }
+        A[j] = result
+    }
+    let max = A
+        .iter()
+        .map(|v| v.iter().map(|(w, v)| v).max().unwrap())
+        .max()
+        .unwrap();
+    println!("{} and optimal is {}", max, data_set.optimal_value);
+
+    // println!("{:?}", A)
+}
+
 fn main() {
     let data_sets = get_uncorrelated_data_set();
-    // let data_set = data_sets.into_iter().nth(9).unwrap();
-    // let solve = pseudo_polynomial_knapsack(data_set);
-    // println!(
-    //     "best is {:?} and optimal is {} and time is {:?}",
-    //     solve.result, solve.data_set.optimal_value, solve.execution_time
-    // );
-    data_sets.into_iter().for_each(|data_set| {
-        let solve = pseudo_polynomial_knapsack(data_set);
-        println!(
-            "best is {:?} and optimal is {} and time is {:?}",
-            solve.result, solve.data_set.optimal_value, solve.execution_time
-        );
-    })
+    let data_set = data_sets.into_iter().nth(9).unwrap();
+    let solve = dynamic_programming_knapsack(data_set);
 
-    // let a = solutions.len();
-    // println!(
-    //     "how many weights: {}, and how many items {}",
-    //     solutions[99].len(),
-    //     a
-    // )
+    // data_sets.into_iter().for_each(|data_set| {
+    //     let solve = pseudo_polynomial_knapsack(data_set);
+    //     println!(
+    //         "best: {:?} optimal: {}, time: {:?}, size: {}, capacity: {}",
+    //         solve.result,
+    //         solve.data_set.optimal_value,
+    //         solve.execution_time,
+    //         solve.data_set.items_count,
+    //         solve.data_set.capacity
+    //     );
+    // })
+}
+
+fn print_solve_result(solve_result: SolveResult) {
+    println!(
+        "best: {:?} optimal: {}, time: {:?}, size: {}, capacity: {}",
+        solve_result.result,
+        solve_result.data_set.optimal_value,
+        solve_result.execution_time,
+        solve_result.data_set.items_count,
+        solve_result.data_set.capacity
+    );
 }
