@@ -1,3 +1,7 @@
+use std::os::unix::raw::time_t;
+
+use crate::knapsack::algorithms::types::SolveResult;
+
 #[derive(Debug, Clone)]
 pub struct Record {
     pub lo: i64,
@@ -19,6 +23,7 @@ pub enum InstanceType {
 
 #[derive(Debug)]
 pub struct DataSet {
+    pub title: String,
     pub instance_type: InstanceType,
     pub items_count: i64,
     pub capacity: i64,
@@ -28,12 +33,13 @@ pub struct DataSet {
 
 pub fn parse_entry(entry_data: &str) -> Option<DataSet> {
     let mut lines = entry_data.lines().filter(|line| !line.is_empty());
-    let title = lines.next();
-    if title.is_none() {
+    let first_line = lines.next();
+    if first_line.is_none() {
         return None;
     }
+    let title = first_line.unwrap().to_owned();
+
     let instance_symbol = title
-        .unwrap()
         .split("_")
         .nth(1)
         .unwrap_or("1")
@@ -75,6 +81,7 @@ pub fn parse_entry(entry_data: &str) -> Option<DataSet> {
         .collect::<Vec<Record>>();
 
     let data_set = DataSet {
+        title,
         records,
         items_count,
         optimal_value,
