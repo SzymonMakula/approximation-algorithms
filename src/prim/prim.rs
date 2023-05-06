@@ -1,75 +1,60 @@
-type Matrix = Vec<Vec<i64>>;
-
-pub fn prim_algorithm(G: Matrix, root: i64) -> i64 {
-    1
-}
+pub type Matrix = Vec<Vec<i64>>;
 
 #[derive(Debug, Clone)]
-struct Node {
-    key: i64,
-    parent: Option<i64>,
-    isInMST: bool,
-    index: i64,
+pub struct Node {
+    pub key: i64,
+    pub parent: Option<usize>,
+    is_in_mst: bool,
+    pub index: usize,
 }
 
-pub fn run_prim() {
-    let matrix: Matrix = vec![
-        vec![0, 0, 3, 0, 0],
-        vec![0, 0, 10, 4, 0],
-        vec![3, 10, 0, 2, 6],
-        vec![0, 4, 2, 0, 1],
-        vec![0, 0, 6, 1, 0],
-    ];
-
+pub fn prim_algorithm(matrix: Matrix, root: usize) -> Vec<Node> {
     let mut nodes: Vec<Node> = vec![];
-
-    let mut i = 0;
-    for vertex in &matrix[0] {
+    matrix[0].iter().enumerate().for_each(|(index, _)| {
         nodes.push(Node {
             key: i64::MAX,
-            index: i,
-            isInMST: false,
+            index,
+            is_in_mst: false,
             parent: None,
         });
-        i += 1;
-    }
-    nodes[0].key = -1;
+    });
+    nodes[root].key = 0;
+    let nodes_count = nodes.len();
 
-    while !is_queue_empty(&nodes) {
-        let min_value_vertex = extract_min(&nodes) as usize;
-        nodes[min_value_vertex].isInMST = true;
+    for _ in 0..nodes_count {
+        let min_value_vertex = extract_min(&nodes);
+        nodes[min_value_vertex].is_in_mst = true;
 
         for mut vertex in 0..nodes.len() {
-            let vertex = vertex.to_owned() as usize;
             if matrix[min_value_vertex][vertex] != 0
-                && !nodes[vertex].isInMST
+                && !nodes[vertex].is_in_mst
                 && matrix[min_value_vertex][vertex] < nodes[vertex].key
             {
-                nodes[vertex].parent = Some(min_value_vertex as i64);
+                nodes[vertex].parent = Some(min_value_vertex);
                 nodes[vertex].key = matrix[min_value_vertex][vertex];
             }
         }
     }
-    print!("\nEdge \t Weight \n");
-    nodes.iter().for_each(|node| {
-        println!("{:?} <--> {} \t {}", node.parent, node.index, node.key);
-    });
+    nodes
 }
 
-fn is_queue_empty(queue: &Vec<Node>) -> bool {
-    queue.iter().all(|node| node.isInMST)
-}
-
-fn extract_min(queue: &Vec<Node>) -> i64 {
+fn extract_min(nodes: &Vec<Node>) -> usize {
     let mut min = i64::MAX;
     let mut lowest_index = 0;
     let mut index = 0;
-    for node in queue {
-        if !node.isInMST && node.key < min {
+    for node in nodes {
+        if !node.is_in_mst && node.key < min {
             min = node.key;
             lowest_index = index;
         }
         index += 1;
     }
     lowest_index
+}
+
+pub fn print_mst(nodes: &Vec<Node>) {
+    print!("\nEdge \t         Weight\n");
+    nodes.iter().for_each(|node| {
+        println!("{:?} <--> {} \t {}", node.parent, node.index, node.key);
+    });
 }
