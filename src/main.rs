@@ -1,10 +1,5 @@
-use magisterka_projekt::tsp::parsers::parsers::get_data_set;
+use magisterka_projekt::prim::prim::run_prim;
 
 fn main() {
-  let data_set = get_data_set();
-  println!("{:?}", data_set);
-
+    run_prim()
 }
-
-
-
