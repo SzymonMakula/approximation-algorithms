@@ -1,17 +1,18 @@
 use std::fs;
 
-use crate::prim::prim::Matrix;
+use crate::tsp::algorithms::prim::prim::Matrix;
 
 #[derive(Debug, Clone)]
 pub struct DataSet {
-    name: String,
-    comment: String,
-    dimension: i64,
-    nodes: Vec<Node>,
+    pub name: String,
+    pub comment: String,
+    pub dimension: i64,
+    pub nodes: Vec<CityNode>,
+    pub optimum: i64,
 }
 
 #[derive(Debug, Clone)]
-pub struct Node {
+pub struct CityNode {
     index: i64,
     x: i64,
     y: i64,
@@ -30,9 +31,10 @@ pub fn parse_data_set(data: &str) -> DataSet {
         .parse::<i64>()
         .unwrap();
 
-    let mut nodes: Vec<Node> = vec![];
+    let mut nodes: Vec<CityNode> = vec![];
+    let optimum = lines.nth(2).unwrap().parse::<i64>().unwrap();
 
-    lines.skip(2).for_each(|entry| {
+    lines.for_each(|entry| {
         if entry.eq("EOF") {
             return;
         }
@@ -44,10 +46,11 @@ pub fn parse_data_set(data: &str) -> DataSet {
         let x = entry_iter.next().unwrap();
         let y = entry_iter.next().unwrap();
 
-        let node = Node { index, x, y };
+        let node = CityNode { index, x, y };
         nodes.push(node)
     });
     DataSet {
+        optimum,
         dimension,
         name,
         comment,
@@ -55,17 +58,26 @@ pub fn parse_data_set(data: &str) -> DataSet {
     }
 }
 
+pub fn get_data_sets() -> Vec<DataSet> {
+    let dir = fs::read_dir("./src/tsp/datasets").unwrap();
+    dir.map(|entry| {
+        let path = entry.unwrap().path();
+        let content = fs::read_to_string(path).unwrap();
+        parse_data_set(&content)
+    })
+    .collect::<Vec<DataSet>>()
+}
+
 pub fn get_data_set() -> DataSet {
     let content = fs::read_to_string("./src/tsp/datasets/pr76.tsp").unwrap();
     parse_data_set(&content)
 }
 
-pub fn construct_adjacency_matrix(data_set: DataSet) -> Matrix {
+pub fn construct_adjacency_matrix(data_set: &DataSet) -> Matrix {
     let mut matrix = vec![];
     let nodes = data_set.nodes.clone();
     data_set.nodes.iter().for_each(|node| {
         let mut list = vec![];
-        let index = (node.index - 1) as usize;
         for target in &nodes {
             let xd = node.x - target.x;
             let yd = node.y - target.y;

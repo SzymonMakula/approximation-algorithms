@@ -1,5 +1,3 @@
-use std::cmp::max;
-use std::io::ErrorKind::TimedOut;
 use std::time::Instant;
 
 use crate::knapsack::algorithms::types::SolveResult;

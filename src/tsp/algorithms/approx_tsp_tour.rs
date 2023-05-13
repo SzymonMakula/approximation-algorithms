@@ -1,11 +1,9 @@
-use crate::prim::prim::{prim_algorithm, print_mst, Matrix};
-use crate::prim::tree_traversal::preorder_traversal;
+use crate::tsp::algorithms::prim::prim::{prim_algorithm, Matrix};
+use crate::tsp::algorithms::prim::tree_traversal::preorder_traversal;
 
 pub fn approx_tsp_tour(matrix: Matrix) -> i64 {
     let mst = prim_algorithm(matrix.clone(), 0);
-    let mut order = preorder_traversal(&mst, 0);
-    println!("the order is {:?}", order);
-
+    let mut order = preorder_traversal(&mst);
     let current = order.pop().unwrap();
     let cost = sum_path(&matrix, order, current, 0);
     cost

@@ -6,6 +6,7 @@ pub struct Node {
     pub parent: Option<usize>,
     is_in_mst: bool,
     pub index: usize,
+    pub children: Vec<usize>,
 }
 
 pub fn prim_algorithm(matrix: Matrix, root: usize) -> Vec<Node> {
@@ -16,6 +17,7 @@ pub fn prim_algorithm(matrix: Matrix, root: usize) -> Vec<Node> {
             index,
             is_in_mst: false,
             parent: None,
+            children: vec![],
         });
     });
     nodes[root].key = 0;
