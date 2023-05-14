@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::Path;
 
 use crate::knapsack::algorithms::types::SolveResult;
 use crate::knapsack::parsers::parsers::{parse_entry, DataSet, InstanceType};
@@ -32,6 +33,11 @@ pub fn get_data_sets() -> Vec<DataSet> {
         result.append(&mut data_sets);
     }
     result
+}
+
+pub fn get_data_set(path: &str) -> Vec<DataSet> {
+    let content = fs::read_to_string(path).unwrap();
+    parse_file_to_datasets(content)
 }
 
 pub fn get_uncorrelated_data_set() -> Vec<DataSet> {
