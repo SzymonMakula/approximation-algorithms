@@ -1,6 +1,8 @@
 use std::time::Instant;
 
-use crate::knapsack::algorithms::dynamic_programming::_dynamic_programming_knapsack;
+use crate::knapsack::algorithms::dynamic_programming::{
+    _dynamic_programming_knapsack, kp_dynamic_by_values, kp_dynamic_by_weight,
+};
 use crate::knapsack::algorithms::types::SolveResult;
 use crate::knapsack::parsers::parsers::DataSet;
 
@@ -35,7 +37,7 @@ pub fn fptas_knapsack(data_set: DataSet, e: f64) -> SolveResult {
 
     SolveResult {
         result: (result * K) as i64,
-        ratio: result / data_set.optimal_value as f64,
+        ratio: (result * K) / data_set.optimal_value as f64,
         data_set,
         execution_time: now.elapsed(),
     }

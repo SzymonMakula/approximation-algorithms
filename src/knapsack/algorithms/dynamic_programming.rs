@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::cmp::{max, min};
 use std::time::Instant;
 
 use crate::knapsack::algorithms::types::SolveResult;
@@ -21,6 +21,8 @@ pub fn _dynamic_programming_knapsack(values: Vec<i64>, weights: Vec<i64>, capaci
         }
         A[j] = get_dominating_pairs(A[j].clone())
     }
+    println!("len is {}", A[A.len() - 1].len());
+    println!("max value is {}", values.iter().sum::<i64>());
     let max_value = A
         .iter()
         .map(|v| v.iter().map(|(w, v)| v).max().unwrap())
@@ -64,7 +66,7 @@ fn get_dominating_pairs(mut pairs: Vec<Pair>) -> Vec<Pair> {
     result
 }
 
-fn kp_dynamic_by_values(old_values: Vec<i64>, old_weights: Vec<i64>, capacity: i64) -> i64 {
+pub fn kp_dynamic_by_values(old_values: Vec<i64>, old_weights: Vec<i64>, capacity: i64) -> i64 {
     let items_count = old_values.len();
 
     let mut values = vec![0];
@@ -105,4 +107,51 @@ fn kp_dynamic_by_values(old_values: Vec<i64>, old_weights: Vec<i64>, capacity: i
     }
     // println!("{:?} and optimal {}", max_k, data_set.optimal_value);
     max_value as i64
+}
+
+pub fn kp_dynamic_by_weight(old_values: Vec<i64>, old_weights: Vec<i64>, capacity: i64) -> i64 {
+    let items_count = old_values.len();
+
+    let mut values: Vec<i64> = vec![];
+    values.push(0);
+    old_values
+        .iter()
+        .for_each(|record| values.push(record.to_owned()));
+
+    let mut weights: Vec<i64> = vec![];
+    weights.push(0);
+
+    old_weights
+        .iter()
+        .for_each(|record| weights.push(record.to_owned()));
+
+    let mut solutions: Vec<Vec<i64>> = vec![];
+
+    for _ in 0..=items_count {
+        let mut vector = Vec::with_capacity(capacity as usize);
+        for _ in 0..=capacity {
+            vector.push(0)
+        }
+        solutions.push(vector)
+    }
+
+    for n in 1..=items_count {
+        for w in 0..=capacity {
+            if weights[n] > w {
+                solutions[n][w as usize] = solutions[n - 1][w as usize]
+            } else {
+                solutions[n][w as usize] = max(
+                    solutions[n - 1][w as usize],
+                    solutions[n - 1][(w - weights[n]) as usize] + values[n],
+                )
+            }
+        }
+    }
+    let best = solutions
+        .into_iter()
+        .map(|solution| solution.into_iter().map(|val| val).max().unwrap())
+        .max()
+        .unwrap();
+
+    best
 }
