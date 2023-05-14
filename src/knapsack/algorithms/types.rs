@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::knapsack::parsers::parsers::{DataSet, InstanceType};
+use crate::knapsack::parsers::parsers::DataSet;
 
 #[derive(Debug)]
 pub struct SolveResult {

@@ -1,7 +1,3 @@
-use std::os::unix::raw::time_t;
-
-use crate::knapsack::algorithms::types::SolveResult;
-
 #[derive(Debug, Clone)]
 pub struct Record {
     pub lo: i64,
