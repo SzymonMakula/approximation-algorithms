@@ -33,11 +33,15 @@ pub fn fptas_knapsack(data_set: DataSet, e: f64) -> SolveResult {
         .map(|&value| (value as f64 / K as f64).floor() as i64)
         .collect::<Vec<i64>>();
 
-    let result = _dynamic_programming_knapsack(new_values, weights, data_set.capacity) as f64;
+    let (val, items) = _dynamic_programming_knapsack(new_values, weights, data_set.capacity);
+
+    let result = items.into_iter().map(|index| values[index]).sum::<i64>();
+
+    println!("computed {}, summary {} and ", max_value, val);
 
     SolveResult {
-        result: (result * K) as i64,
-        ratio: (result * K) / data_set.optimal_value as f64,
+        result,
+        ratio: result as f64 / data_set.optimal_value as f64,
         data_set,
         execution_time: now.elapsed(),
     }

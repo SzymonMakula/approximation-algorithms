@@ -1,6 +1,5 @@
 use std::time::Instant;
 
-use magisterka_projekt::knapsack::algorithms::dynamic_programming::dynamic_programming_knapsack;
 use magisterka_projekt::knapsack::algorithms::fptas::fptas_knapsack;
 use magisterka_projekt::knapsack::helpers::helpers::get_data_set;
 use magisterka_projekt::tsp::algorithms::approx_tsp_tour::approx_tsp_tour;
@@ -9,10 +8,14 @@ use magisterka_projekt::tsp::parsers::parsers::{construct_adjacency_matrix, get_
 fn main() {
     let data_set = get_data_set("/home/szymon/FunProjects/magisterka/magisterka-projekt/src/knapsack/datasets/knapPI_6_100_10000.csv");
     for set in data_set {
-        let result = fptas_knapsack(set, 0.8);
+        let result = fptas_knapsack(set, 0.01);
         println!(
-            "{:}, capacity: {}, and time {:?}",
-            result.ratio, result.data_set.capacity, result.execution_time
+            " val {} vs {:}, ratio: {}, capacity: {}, and time {:?}",
+            result.result,
+            result.data_set.optimal_value,
+            result.ratio,
+            result.data_set.capacity,
+            result.execution_time
         )
     }
 }
