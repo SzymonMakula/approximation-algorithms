@@ -58,46 +58,36 @@ pub fn _dynamic_programming_knapsack(
     }
 
     let record = A
-        .iter()
-        .map(|v| v.iter().max_by_key(|record| record.value).unwrap())
+        .remove(A.len() - 1)
+        .into_iter()
         .max_by_key(|record| record.value)
-        .unwrap()
-        .to_owned();
-
-    let max_value = record.value;
-    // let val = record
-    //     .chosen_items
-    //     .into_iter()
-    //     .map(|index| values[index])
-    //     .sum::<i64>();
-    //
-    // println!("computed {}, summary {} and ", max_value, val);
+        .unwrap();
 
     (record.value, record.chosen_items)
 }
 
-// pub fn dynamic_programming_knapsack(data_set: DataSet) -> SolveResult {
-//     let values = data_set
-//         .records
-//         .iter()
-//         .map(|record| record.value)
-//         .collect::<Vec<i64>>();
-//     let weights = data_set
-//         .records
-//         .iter()
-//         .map(|record| record.weight)
-//         .collect::<Vec<i64>>();
-//
-//     let now = Instant::now();
-//     let result = _dynamic_programming_knapsack(values, weights, data_set.capacity);
-//
-//     SolveResult {
-//         result,
-//         execution_time: now.elapsed(),
-//         ratio: result as f64 / data_set.optimal_value as f64,
-//         data_set,
-//     }
-// }
+pub fn dynamic_programming_knapsack(data_set: DataSet) -> SolveResult {
+    let values = data_set
+        .records
+        .iter()
+        .map(|record| record.value)
+        .collect::<Vec<i64>>();
+    let weights = data_set
+        .records
+        .iter()
+        .map(|record| record.weight)
+        .collect::<Vec<i64>>();
+
+    let now = Instant::now();
+    let (result, items) = _dynamic_programming_knapsack(values, weights, data_set.capacity);
+
+    SolveResult {
+        result,
+        execution_time: now.elapsed(),
+        ratio: result as f64 / data_set.optimal_value as f64,
+        data_set,
+    }
+}
 
 fn get_dominating_pairs(mut pairs: Vec<Record>) -> Vec<Record> {
     pairs.sort_by_key(|record| (record.weight, std::cmp::Reverse(record.value)));

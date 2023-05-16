@@ -8,7 +8,7 @@ use magisterka_projekt::tsp::parsers::parsers::{construct_adjacency_matrix, get_
 fn main() {
     let data_set = get_data_set("/home/szymon/FunProjects/magisterka/magisterka-projekt/src/knapsack/datasets/knapPI_6_100_10000.csv");
     for set in data_set {
-        let result = fptas_knapsack(set, 0.9);
+        let result = fptas_knapsack(set, 0.01);
         println!(
             " val {} vs {:}, ratio: {}, capacity: {}, and time {:?}",
             result.result,
