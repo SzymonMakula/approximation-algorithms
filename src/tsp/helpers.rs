@@ -1,4 +1,4 @@
-use crate::tsp::algorithms::prim::prim::Node;
+use crate::tsp::algorithms::prim::Node;
 
 #[derive(Debug, Clone)]
 pub struct TreeNode {

@@ -1,5 +1,5 @@
-use crate::tsp::algorithms::prim::map_to_tree::{map_nodes_to_tree, TreeNode};
-use crate::tsp::algorithms::prim::prim::Node;
+use crate::tsp::algorithms::prim::Node;
+use crate::tsp::helpers::{map_nodes_to_tree, TreeNode};
 
 pub fn preorder_traversal(nodes: &Vec<Node>) -> Vec<usize> {
     let tree = map_nodes_to_tree(nodes);

@@ -1,5 +1,5 @@
-use crate::tsp::algorithms::prim::prim::{prim_algorithm, Matrix};
-use crate::tsp::algorithms::prim::tree_traversal::preorder_traversal;
+use crate::tsp::algorithms::prim::{prim_algorithm, Matrix};
+use crate::tsp::algorithms::tree_traversal::preorder_traversal;
 
 pub fn approx_tsp_tour(matrix: Matrix) -> i64 {
     let mst = prim_algorithm(matrix.clone(), 0);

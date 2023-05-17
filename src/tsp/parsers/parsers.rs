@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::tsp::algorithms::prim::prim::Matrix;
+use crate::tsp::algorithms::prim::Matrix;
 
 #[derive(Debug, Clone)]
 pub struct DataSet {
