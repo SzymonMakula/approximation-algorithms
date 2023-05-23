@@ -37,8 +37,6 @@ pub fn fptas_knapsack(data_set: DataSet, e: f64) -> SolveResult {
 
     let result = items.into_iter().map(|index| values[index]).sum::<i64>();
 
-    println!("computed {}, summary {} and ", max_value, val);
-
     SolveResult {
         result,
         ratio: result as f64 / data_set.optimal_value as f64,

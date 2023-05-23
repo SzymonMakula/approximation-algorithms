@@ -41,6 +41,9 @@ pub fn munkers(matrix: Matrix) {
     // 1 = starred, 2 = primed
     let mut markings = vec![0; dimension * dimension];
 
+    let mut z0_row = 0;
+    let mut z0_column = 0;
+
     let mut done = false;
     while done != true {
         match step {
@@ -104,67 +107,175 @@ pub fn munkers(matrix: Matrix) {
                 }
             }
             Step::Step4 => {
-                let mut find_starred_zero = || {
-                    let mut done = false;
-                    let mut i = 0;
-                    let mut row: i64 = -1;
-                    let mut col: i64 = -1;
-
-                    while done != true {
-                        let mut j = 0;
-                        while j < dimension {
-                            let index = get_index(i, j);
-                            if costs[index] == 0 && covered_rows[i] == 0 && covered_cols[j] == 0 {
-                                row = i as i64;
-                                col = j as i64;
-                                done = true;
-                                return (row, col);
-                            }
-                            j = j + 1;
-                        }
-                        i = i + 1;
-                        if i >= dimension {
-                            done = true
-                        }
-                    }
-                    return (row, col);
-                };
-
-                let is_star_in_row = |row: usize| {
-                    for j in 0..dimension {
-                        let index = get_index(row, j);
-                        if markings[index] == 1 {
-                            return true;
-                        }
-                    }
-                    return false;
-                };
-
                 let mut done = false;
                 while done != true {
-                    let (row, col) = find_starred_zero();
-                    println!("{}", row);
+                    let mut find_starred_zero = || {
+                        let mut done = false;
+                        let mut i = 0;
 
-                    if row == -1 {
+                        while done != true {
+                            let mut j = 0;
+                            while j < dimension {
+                                let index = get_index(i, j);
+                                if costs[index] == 0 && covered_rows[i] == 0 && covered_cols[j] == 0
+                                {
+                                    let row = i;
+                                    let col = j;
+                                    done = true;
+                                    return Some((row, col));
+                                }
+                                j = j + 1;
+                            }
+                            i = i + 1;
+                            if i >= dimension {
+                                done = true
+                            }
+                        }
+                        return None;
+                    };
+
+                    let is_star_in_row = |row: usize, markings: &Vec<i32>| {
+                        for j in 0..dimension {
+                            let index = get_index(row, j);
+                            if markings[index] == 1 {
+                                return true;
+                            }
+                        }
+                        return false;
+                    };
+
+                    let find_col_of_star = |row: usize, markings: &Vec<i32>| {
+                        for j in 0..dimension {
+                            let index = get_index(row, j);
+                            if markings[index] == 1 {
+                                return j;
+                            }
+                        }
+                        panic!("No column with star found")
+                    };
+
+                    let starred_zero = find_starred_zero();
+
+                    if starred_zero.is_none() {
                         done = true;
                         step = Step::Step6;
                     } else {
+                        let (row, col) = starred_zero.unwrap();
                         let index = get_index(row as usize, col as usize);
                         markings[index] = 2;
-                        if is_star_in_row(row as usize) {
+                        if is_star_in_row(row as usize, &markings) {
+                            let col = find_col_of_star(row as usize, &markings);
                             covered_rows[row as usize] = 1;
                             covered_cols[col as usize] = 0;
                         } else {
                             done = true;
+                            z0_row = row;
+                            // To moze nie byc poprawny col ^ zobacz wyzej jak go wyznaczasz w if
+                            z0_column = col;
                             step = Step::Step5;
                         }
                     }
                 }
             }
-            Step::Step5 => {}
-            Step::Step6 => {
+            Step::Step5 => {
+                let col_count = 2;
+                let find_row_of_star = |col: usize, markings: &Vec<i32>| {
+                    for j in 0..dimension {
+                        let index = get_index(j, col);
+                        if markings[index] == 1 {
+                            return Some(j);
+                        }
+                    }
+                    None
+                };
+                let find_col_of_prime = |row: usize, markings: &Vec<i32>| {
+                    for j in 0..dimension {
+                        let index = get_index(row, j);
+                        if markings[index] == 2 {
+                            return j;
+                        }
+                    }
+                    panic!("No column found for prime")
+                };
+
+                let convert_path = |markings: &mut Vec<i32>, path: &Vec<usize>, count: usize| {
+                    for i in 0..count + 1 {
+                        let path_index_1 = i * col_count + 0;
+                        let path_index_2 = i * col_count + 1;
+
+                        let index = get_index(path[path_index_1], path[path_index_2]);
+                        if markings[index] == 1 {
+                            markings[index] = 0
+                        } else {
+                            markings[index] = 1
+                        }
+                    }
+                };
+
+                let clear_covers = |covered_cols: &mut Vec<i32>, covered_rows: &mut Vec<i32>| {
+                    for i in 0..dimension {
+                        covered_cols[i] = 0;
+                        covered_rows[i] = 0;
+                    }
+                };
+
+                let erase_primes = |markings: &mut Vec<i32>| {
+                    for i in 0..dimension {
+                        for j in 0..dimension {
+                            let index = get_index(i, j);
+                            if markings[index] == 2 {
+                                markings[index] = 0
+                            }
+                        }
+                    }
+                };
+
+                let mut count = 0;
+                let mut path: Vec<usize> = vec![0; dimension * dimension + 1];
+                let mut done = false;
+                let path_index_1 = count * 2 + 0;
+                let path_index_2 = count * 2 + 1;
+                path[path_index_1] = z0_row;
+                path[path_index_2] = z0_column;
+
                 print_as_2d(costs.clone(), dimension);
 
+                while !done {
+                    let path_index = count * 2 + 1;
+                    let row_with_star = find_row_of_star(path[path_index], &markings);
+
+                    if row_with_star.is_some() {
+                        count = count + 1;
+                        let path_index_1 = count * 2 + 0;
+
+                        path[path_index_1] = row_with_star.unwrap();
+                        let path_index_2 = count * 2 + 1;
+                        let path_index_3 = (count - 1) * 2 + 1;
+
+                        path[path_index_2] = path[path_index_3]
+                    } else {
+                        done = true
+                    }
+                    if !done {
+                        let mut path_index_1 = count * 2 + 0;
+                        let prime_col = find_col_of_prime(path[path_index_1], &markings);
+
+                        count = count + 1;
+                        path_index_1 = count * 2 + 0;
+                        let path_index_2 = count * 2 + 1;
+                        let path_index_3 = (count - 1) * 2 + 0;
+
+                        path[path_index_1] = path[path_index_3];
+                        path[path_index_2] = prime_col;
+                    }
+                }
+                convert_path(&mut markings, &path, count);
+
+                clear_covers(&mut covered_cols, &mut covered_rows);
+                erase_primes(&mut markings);
+                step = Step::Step3;
+            }
+            Step::Step6 => {
                 let find_smallest = || {
                     let mut min_val = i64::MAX;
                     for i in 0..dimension {
@@ -180,7 +291,6 @@ pub fn munkers(matrix: Matrix) {
                     min_val
                 };
                 let smallest_uncovered = find_smallest();
-                println!("{}", smallest_uncovered);
                 for i in 0..dimension {
                     for j in 0..dimension {
                         let index = get_index(i, j);
@@ -193,11 +303,12 @@ pub fn munkers(matrix: Matrix) {
                         }
                     }
                 }
-
                 step = Step::Step4;
             }
             Step::Done => {
                 print_as_2d(costs.clone(), dimension);
+                println!("after markings {:?}", markings);
+
                 done = true
             }
         }
