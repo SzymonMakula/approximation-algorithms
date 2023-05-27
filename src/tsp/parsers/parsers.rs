@@ -81,7 +81,10 @@ pub fn construct_adjacency_matrix(data_set: &DataSet) -> Matrix {
         for target in &nodes {
             let xd = node.x - target.x;
             let yd = node.y - target.y;
-            let distance = f64::ceil(((xd.pow(2) + yd.pow(2)) as f64).sqrt()) as i64;
+            let mut distance = f64::ceil(((xd.pow(2) + yd.pow(2)) as f64).sqrt()) as i64;
+            if distance == 0 {
+                distance = i64::MAX
+            }
             list.push(distance)
         }
         matrix.push(list)

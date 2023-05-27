@@ -9,7 +9,7 @@ pub fn approx_tsp_tour(matrix: Matrix) -> i64 {
     cost
 }
 
-fn sum_path(matrix: &Matrix, mut order: Vec<usize>, current: usize, sum: i64) -> i64 {
+pub fn sum_path(matrix: &Matrix, mut order: Vec<usize>, current: usize, sum: i64) -> i64 {
     if order.is_empty() {
         return sum + matrix[current][matrix.len() - 1];
     }

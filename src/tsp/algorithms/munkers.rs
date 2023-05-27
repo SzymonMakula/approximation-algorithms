@@ -25,14 +25,13 @@ fn print_as_2d(matrix: Vec<i64>, dimension: usize) {
     println!("---Matrix END---\n");
 }
 
-pub fn munkers(matrix: Matrix) {
+pub fn munkers(matrix: Matrix) -> Matrix {
     let mut step: Step = Step::Step1;
+    let mut output: Matrix = vec![];
 
     let dimension = matrix.len();
     let mut costs = matrix.clone().into_iter().flatten().collect::<Vec<i64>>();
     let get_index = |row: usize, col: usize| -> usize { row * dimension + col };
-
-    print_as_2d(costs.clone(), dimension);
 
     // covered = 1
     let mut covered_rows = vec![0; dimension];
@@ -91,8 +90,6 @@ pub fn munkers(matrix: Matrix) {
                         }
                     }
                 }
-                println!("{:?}", covered_rows);
-                println!("{:?}", covered_cols);
 
                 let covered_cols_len = covered_cols
                     .clone()
@@ -161,12 +158,12 @@ pub fn munkers(matrix: Matrix) {
                         step = Step::Step6;
                     } else {
                         let (row, col) = starred_zero.unwrap();
-                        let index = get_index(row as usize, col as usize);
+                        let index = get_index(row, col);
                         markings[index] = 2;
                         if is_star_in_row(row as usize, &markings) {
-                            let col = find_col_of_star(row as usize, &markings);
-                            covered_rows[row as usize] = 1;
-                            covered_cols[col as usize] = 0;
+                            let col = find_col_of_star(row, &markings);
+                            covered_rows[row] = 1;
+                            covered_cols[col] = 0;
                         } else {
                             done = true;
                             z0_row = row;
@@ -238,8 +235,6 @@ pub fn munkers(matrix: Matrix) {
                 path[path_index_1] = z0_row;
                 path[path_index_2] = z0_column;
 
-                print_as_2d(costs.clone(), dimension);
-
                 while !done {
                     let path_index = count * 2 + 1;
                     let row_with_star = find_row_of_star(path[path_index], &markings);
@@ -270,9 +265,9 @@ pub fn munkers(matrix: Matrix) {
                     }
                 }
                 convert_path(&mut markings, &path, count);
-
                 clear_covers(&mut covered_cols, &mut covered_rows);
                 erase_primes(&mut markings);
+
                 step = Step::Step3;
             }
             Step::Step6 => {
@@ -306,11 +301,17 @@ pub fn munkers(matrix: Matrix) {
                 step = Step::Step4;
             }
             Step::Done => {
-                print_as_2d(costs.clone(), dimension);
-                println!("after markings {:?}", markings);
-
-                done = true
+                for i in 0..dimension {
+                    let mut row: Vec<i64> = vec![];
+                    for j in 0..dimension {
+                        let index = get_index(i, j);
+                        row.push(markings[index] as i64)
+                    }
+                    output.push(row)
+                }
+                done = true;
             }
         }
     }
+    return output;
 }

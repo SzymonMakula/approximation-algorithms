@@ -6,7 +6,6 @@ pub struct Node {
     pub parent: Option<usize>,
     is_in_mst: bool,
     pub index: usize,
-    pub children: Vec<usize>,
 }
 
 pub fn prim_algorithm(matrix: Matrix, root: usize) -> Vec<Node> {
@@ -17,7 +16,6 @@ pub fn prim_algorithm(matrix: Matrix, root: usize) -> Vec<Node> {
             index,
             is_in_mst: false,
             parent: None,
-            children: vec![],
         });
     });
     nodes[root].key = 0;
@@ -28,7 +26,7 @@ pub fn prim_algorithm(matrix: Matrix, root: usize) -> Vec<Node> {
         nodes[min_value_vertex].is_in_mst = true;
 
         for mut vertex in 0..nodes.len() {
-            if matrix[min_value_vertex][vertex] != 0
+            if matrix[min_value_vertex][vertex] != i64::MAX
                 && !nodes[vertex].is_in_mst
                 && matrix[min_value_vertex][vertex] < nodes[vertex].key
             {
