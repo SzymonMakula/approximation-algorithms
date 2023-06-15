@@ -15,51 +15,15 @@ struct GraphNode {
 
 type Graph = HashMap<usize, GraphNode>;
 
-// let mut graph_2 = HashMap::new();
-// graph_2.insert(
-// 0,
-// GraphNode {
-// index: 0,
-// adjacent: vec![1, 2, 4, 5],
-// },
-// );
-// graph_2.insert(
-// 1,
-// GraphNode {
-// index: 1,
-// adjacent: vec![0, 2],
-// },
-// );
-// graph_2.insert(
-// 2,
-// GraphNode {
-// index: 2,
-// adjacent: vec![1, 3, 0, 4],
-// },
-// );
-// graph_2.insert(
-// 3,
-// GraphNode {
-// index: 3,
-// adjacent: vec![2, 4],
-// },
-// );
-// graph_2.insert(
-// 4,
-// GraphNode {
-// index: 4,
-// adjacent: vec![5, 0, 2, 3],
-// },
-// );
-// graph_2.insert(
-// 5,
-// GraphNode {
-// index: 5,
-// adjacent: vec![0, 4],
-// },
-// );
+fn print_2d(input: Vec<Vec<i64>>) {
+    for row in input {
+        print!("{:?}\n", row)
+    }
+    println!("----")
+}
+
 pub fn christofides_algorithm(matrix: Matrix) -> i64 {
-    let mst = prim_algorithm(matrix.clone(), 0);
+    let mst = prim_algorithm(matrix.clone(), 1);
     let tree = map_nodes_to_tree(&mst);
     let mut graph: Graph = HashMap::new();
 
@@ -75,21 +39,14 @@ pub fn christofides_algorithm(matrix: Matrix) -> i64 {
         graph.insert(graph_node.index, graph_node);
     }
 
-    let odd_indices = graph
+    println!("mst is {:?}", graph);
+
+    let mut odd_indices = graph
         .iter()
         .filter(|(_, node)| node.adjacent.len() % 2 != 0)
         .map(|(i, node)| node.index)
         .collect::<Vec<usize>>();
-
-    println!("the odd indices are {:?}", odd_indices);
-    println!("matrix {:?}", matrix[odd_indices[0]]);
-    let formatted = matrix[odd_indices[0]]
-        .iter()
-        .enumerate()
-        .filter(|(i, item)| odd_indices.contains(i))
-        .map(|(i, val)| val.to_owned())
-        .collect::<Vec<i64>>();
-    println!("after filter {:?}\n", formatted);
+    odd_indices.sort();
 
     let mut is_odd_index = vec![false; matrix.len()];
     for i in &odd_indices {
@@ -107,7 +64,8 @@ pub fn christofides_algorithm(matrix: Matrix) -> i64 {
 
         secondary_matrix.push(row)
     }
-    println!("{:?}", secondary_matrix);
+    print_2d(matrix.clone());
+    print_2d(secondary_matrix.clone());
 
     let output = munkers(secondary_matrix);
     println!("{:?}", output);
@@ -115,27 +73,37 @@ pub fn christofides_algorithm(matrix: Matrix) -> i64 {
     // each record n[i] represent i-th node that is matched with n[i]-th node
     let mut perfect_min_match = vec![];
     for i in 0..output.len() {
-        let (min_index, _) = output[i]
+        let row = &output[i];
+        let (min_index, a) = row
             .iter()
             .enumerate()
-            .max_by_key(|(index, value)| value.to_owned())
+            .max_by_key(|(i, &val)| val.to_owned())
             .unwrap();
-        perfect_min_match.push((odd_indices[i], odd_indices[min_index]));
+        let pair = (odd_indices[i], odd_indices[min_index]);
+        perfect_min_match.push(pair)
     }
 
-    // println!("perfect min match {:?}", perfect_min_match);
-    // println!("graph before {:?}", graph);
+    println!("odd indices {:?}", odd_indices);
+    println!("perfect min match {:?}", perfect_min_match);
+    println!("graph before {:?}", graph);
 
     for pair in perfect_min_match {
         let (incoming, outgoing) = pair;
-        graph.get_mut(&incoming).unwrap().adjacent.push(outgoing);
-    }
-    // println!("graph after {:?}", graph);
+        let adjacent_to_incoming = &mut graph.get_mut(&incoming).unwrap().adjacent;
+        adjacent_to_incoming.push(outgoing);
 
+        let adjacent_to_outgoing = &mut graph.get_mut(&outgoing).unwrap().adjacent;
+        // if !adjacent_to_outgoing.contains(&incoming) {
+        //     adjacent_to_outgoing.push(incoming)
+        // }
+    }
+    println!("graph after {:?}", graph);
+    let mut is_even = graph.iter().all(|(_, node)| node.adjacent.len() % 2 == 0);
+    println!("is even? {}", is_even);
     let eulerian_circuit = hierholzer_algorithm(graph);
     let hamiltonian_circuit = shortcut_circuit(eulerian_circuit);
     let cost = calculate_cost(&matrix, hamiltonian_circuit);
-    cost
+    12
 }
 
 fn hierholzer_algorithm(mut graph: Graph) -> Vec<usize> {
@@ -167,14 +135,7 @@ fn hierholzer_algorithm(mut graph: Graph) -> Vec<usize> {
         let mut sub_tour = vec![current];
         loop {
             let mut unvisited = usize::MAX;
-            // println!("visiting {}", current);
             for adjacent in &graph.get(&current).unwrap().adjacent {
-                // println!(
-                //     "current node {:?}, was it visited {} {}",
-                //     graph.get(&current).unwrap(),
-                //     visited_edges[current][*adjacent],
-                //     visited_edges[*adjacent][current]
-                // );
                 if !visited_edges[current][*adjacent] && !visited_edges[*adjacent][current] {
                     unvisited = *adjacent;
                     visited_edges[current][*adjacent] = true;
@@ -203,6 +164,7 @@ fn hierholzer_algorithm(mut graph: Graph) -> Vec<usize> {
 }
 
 fn shortcut_circuit(tour: Vec<usize>) -> Vec<usize> {
+    print!("the tour is {:?}", tour);
     let mut visited = vec![false; tour.len()];
     let mut shorted = vec![];
     for stop in tour {
@@ -224,7 +186,7 @@ fn calculate_cost(matrix: &Matrix, tour: Vec<usize>) -> i64 {
             stop, previous_stop, matrix[previous_stop][*stop]
         );
         cost = cost + matrix[previous_stop][*stop];
-        previous_stop = *stop
+        previous_stop = *stopz
     }
     cost = cost + matrix[previous_stop][start];
 
