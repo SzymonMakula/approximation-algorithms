@@ -7,7 +7,7 @@ use crate::tsp::algorithms::prim::{prim_algorithm, Matrix};
 use crate::tsp::helpers::map_nodes_to_tree;
 use crate::tsp::parsers::parsers::construct_adjacency_matrix;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct GraphNode {
     index: usize,
     adjacent: Vec<usize>,
@@ -23,7 +23,7 @@ fn print_2d(input: Vec<Vec<i64>>) {
 }
 
 pub fn christofides_algorithm(matrix: Matrix) -> i64 {
-    let mst = prim_algorithm(matrix.clone(), 1);
+    let mst = prim_algorithm(matrix.clone(), 0);
     let tree = map_nodes_to_tree(&mst);
     let mut graph: Graph = HashMap::new();
 
@@ -52,6 +52,7 @@ pub fn christofides_algorithm(matrix: Matrix) -> i64 {
     for i in &odd_indices {
         is_odd_index[*i] = true
     }
+    println!("odd indices {:?}", odd_indices);
     let mut secondary_matrix = vec![];
 
     for i in &odd_indices {
@@ -64,12 +65,19 @@ pub fn christofides_algorithm(matrix: Matrix) -> i64 {
 
         secondary_matrix.push(row)
     }
-    print_2d(matrix.clone());
-    print_2d(secondary_matrix.clone());
-
     let output = munkers(secondary_matrix);
-    println!("{:?}", output);
+    let mut matches = vec![];
 
+    for (index, row) in output.iter().enumerate() {
+        let mut match_pos = 0;
+        for col in 0..row.len() {
+            if row[col] == 1 {
+                match_pos = col
+            }
+        }
+        matches.push((index, match_pos))
+    }
+    println!("matches {:?}", matches);
     // each record n[i] represent i-th node that is matched with n[i]-th node
     let mut perfect_min_match = vec![];
     for i in 0..output.len() {
@@ -83,7 +91,6 @@ pub fn christofides_algorithm(matrix: Matrix) -> i64 {
         perfect_min_match.push(pair)
     }
 
-    println!("odd indices {:?}", odd_indices);
     println!("perfect min match {:?}", perfect_min_match);
     println!("graph before {:?}", graph);
 
@@ -91,11 +98,6 @@ pub fn christofides_algorithm(matrix: Matrix) -> i64 {
         let (incoming, outgoing) = pair;
         let adjacent_to_incoming = &mut graph.get_mut(&incoming).unwrap().adjacent;
         adjacent_to_incoming.push(outgoing);
-
-        let adjacent_to_outgoing = &mut graph.get_mut(&outgoing).unwrap().adjacent;
-        // if !adjacent_to_outgoing.contains(&incoming) {
-        //     adjacent_to_outgoing.push(incoming)
-        // }
     }
     println!("graph after {:?}", graph);
     let mut is_even = graph.iter().all(|(_, node)| node.adjacent.len() % 2 == 0);
@@ -108,58 +110,29 @@ pub fn christofides_algorithm(matrix: Matrix) -> i64 {
 
 fn hierholzer_algorithm(mut graph: Graph) -> Vec<usize> {
     let mut stack = vec![];
-    let mut visited_edges = vec![vec![false; graph.len().pow(2)]; graph.len().pow(2)];
-
     let mut tour = vec![];
-
-    graph
-        .iter()
-        .for_each(|(u, node)| stack.push(node.index.to_owned()));
-
-    let starting_node = stack.last().unwrap().to_owned();
-    tour.push(starting_node);
+    stack.push(graph.get(&0).unwrap().index);
     while !stack.is_empty() {
-        let mut start = stack.last().unwrap().clone().to_owned();
-        let is_complete = graph
-            .get(&start)
-            .unwrap()
-            .adjacent
-            .iter()
-            .all(|out| visited_edges[start][*out] && visited_edges[*out][start]);
-        if is_complete {
+        let mut vertex_index = stack.last().unwrap();
+        let vertex = graph.get_mut(&vertex_index).unwrap();
+        if vertex.adjacent.is_empty() {
+            tour.push(vertex.index);
             stack.pop();
-            continue;
-        }
+        } else {
+            let index = vertex.adjacent.pop().unwrap();
+            let outgoing_vertex = graph.get_mut(&index).unwrap();
 
-        let mut current = start;
-        let mut sub_tour = vec![current];
-        loop {
-            let mut unvisited = usize::MAX;
-            for adjacent in &graph.get(&current).unwrap().adjacent {
-                if !visited_edges[current][*adjacent] && !visited_edges[*adjacent][current] {
-                    unvisited = *adjacent;
-                    visited_edges[current][*adjacent] = true;
-                    visited_edges[*adjacent][current] = true;
-                    break;
-                }
-            }
-
-            sub_tour.push(unvisited);
-            current = unvisited;
-
-            if current == start {
-                break;
-            }
-        }
-
-        for i in 0..tour.len() {
-            if tour[i] == sub_tour[0] {
-                tour.splice(i..i + 1, sub_tour);
-                break;
-            }
+            // println!("\n the ingoing vertex {:?}", vertex_index);
+            // println!("\n the outgoing vertex {:?}\n", outgoing_vertex);
+            let element_pos = outgoing_vertex
+                .adjacent
+                .iter()
+                .position(|el| el == vertex_index)
+                .unwrap();
+            outgoing_vertex.adjacent.swap_remove(element_pos);
+            stack.push(index);
         }
     }
-    println!("the FINAL tour {:?} and stack {:?}", tour, stack);
     tour
 }
 
@@ -181,12 +154,8 @@ fn calculate_cost(matrix: &Matrix, tour: Vec<usize>) -> i64 {
     let start = tour[0];
     let mut previous_stop = start;
     for stop in tour.iter().skip(1) {
-        print!(
-            "stop {} and prev {} and cost {:?}\n",
-            stop, previous_stop, matrix[previous_stop][*stop]
-        );
         cost = cost + matrix[previous_stop][*stop];
-        previous_stop = *stopz
+        previous_stop = *stop
     }
     cost = cost + matrix[previous_stop][start];
 

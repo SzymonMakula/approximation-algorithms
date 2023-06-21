@@ -13,14 +13,30 @@ enum Step {
     Done,
 }
 
-fn print_as_2d(matrix: Vec<i64>, dimension: usize) {
+fn print_as_2d(matrix: Vec<i32>, dimension: usize) {
     println!("---Matrix------");
+    let mut test = vec![];
     for i in 0..dimension {
         let mut row = vec![];
         for j in 0..dimension {
             row.push(matrix.get(i * dimension + j).unwrap().to_owned())
         }
-        println!("{:?}", row)
+        println!("{:?}", row);
+        test.push(row);
+    }
+
+    let mut used = vec![];
+    for row in 0..dimension {
+        for col in 0..dimension {
+            if test[row][col] == 1 {
+                if used.contains(&col) {
+                    panic!("col number {} appears multiple times ", col)
+                }
+                println!("used col {}", col);
+
+                used.push(col);
+            }
+        }
     }
     println!("---Matrix END---\n");
 }
@@ -313,5 +329,8 @@ pub fn munkers(matrix: Matrix) -> Matrix {
             }
         }
     }
+    // println!("the markings{:?}\n", markings);
+    print_as_2d(markings, dimension);
+
     return output;
 }
