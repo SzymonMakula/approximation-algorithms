@@ -63,6 +63,8 @@ pub fn munkers(matrix: Matrix) -> Matrix {
     while done != true {
         match step {
             Step::Step1 => {
+                println!("costs before step 1 {:?}", costs);
+
                 for i in 0..dimension {
                     let mut row = vec![];
                     for j in 0..dimension {
@@ -77,9 +79,13 @@ pub fn munkers(matrix: Matrix) -> Matrix {
                         costs[index] = row[j] - min
                     }
                 }
+                println!("costs at step 1 {:?}", costs);
+
                 step = Step::Step2
             }
             Step::Step2 => {
+                println!("im at step 2 {:?}", costs);
+
                 for i in 0..dimension {
                     for j in 0..dimension {
                         let index = get_index(i, j);
@@ -98,6 +104,8 @@ pub fn munkers(matrix: Matrix) -> Matrix {
                 step = Step::Step3
             }
             Step::Step3 => {
+                println!("im at step 3 {:?}", costs);
+
                 for i in 0..dimension {
                     for j in 0..dimension {
                         let index = get_index(i, j);
@@ -120,6 +128,7 @@ pub fn munkers(matrix: Matrix) -> Matrix {
                 }
             }
             Step::Step4 => {
+                println!("im at step 4 {:?}", costs);
                 let mut done = false;
                 while done != true {
                     let mut find_starred_zero = || {
@@ -191,6 +200,8 @@ pub fn munkers(matrix: Matrix) -> Matrix {
                 }
             }
             Step::Step5 => {
+                println!("im at step 5 {:?}", costs);
+
                 let col_count = 2;
                 let find_row_of_star = |col: usize, markings: &Vec<i32>| {
                     for j in 0..dimension {
@@ -276,6 +287,7 @@ pub fn munkers(matrix: Matrix) -> Matrix {
                         let path_index_2 = count * 2 + 1;
                         let path_index_3 = (count - 1) * 2 + 0;
 
+                        println!("costs before crash {:?}", markings);
                         path[path_index_1] = path[path_index_3];
                         path[path_index_2] = prime_col;
                     }
@@ -287,6 +299,8 @@ pub fn munkers(matrix: Matrix) -> Matrix {
                 step = Step::Step3;
             }
             Step::Step6 => {
+                println!("im at step 6 {:?}", costs);
+
                 let find_smallest = || {
                     let mut min_val = i64::MAX;
                     for i in 0..dimension {
@@ -329,8 +343,6 @@ pub fn munkers(matrix: Matrix) -> Matrix {
             }
         }
     }
-    // println!("the markings{:?}\n", markings);
-    print_as_2d(markings, dimension);
-
+    // println!("output is {:?}", output);
     return output;
 }

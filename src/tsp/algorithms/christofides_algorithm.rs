@@ -1,11 +1,15 @@
 use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::io::Stdin;
+use std::ops::Index;
+use std::os::unix::process::parent_id;
+use std::process::{Command, Stdio};
 
 use crate::tsp::algorithms::approx_tsp_tour::sum_path;
 use crate::tsp::algorithms::munkers::munkers;
 use crate::tsp::algorithms::prim::{prim_algorithm, Matrix};
-use crate::tsp::helpers::map_nodes_to_tree;
-use crate::tsp::parsers::parsers::construct_adjacency_matrix;
+use crate::tsp::helpers::{map_nodes_to_tree, TreeNode};
+use crate::tsp::parsers::parsers::{construct_adjacency_matrix, parse_data_set, CityNode, DataSet};
 
 #[derive(Debug, Clone)]
 struct GraphNode {
@@ -15,16 +19,7 @@ struct GraphNode {
 
 type Graph = HashMap<usize, GraphNode>;
 
-fn print_2d(input: Vec<Vec<i64>>) {
-    for row in input {
-        print!("{:?}\n", row)
-    }
-    println!("----")
-}
-
-pub fn christofides_algorithm(matrix: Matrix) -> i64 {
-    let mst = prim_algorithm(matrix.clone(), 0);
-    let tree = map_nodes_to_tree(&mst);
+fn map_tree_to_graph(tree: Vec<TreeNode>) -> Graph {
     let mut graph: Graph = HashMap::new();
 
     for node in tree {
@@ -38,74 +33,122 @@ pub fn christofides_algorithm(matrix: Matrix) -> i64 {
         }
         graph.insert(graph_node.index, graph_node);
     }
+    graph
+}
 
-    println!("mst is {:?}", graph);
-
-    let mut odd_indices = graph
+fn get_tsp_subset(graph: &Graph, data_set: &DataSet) -> Vec<(usize, usize)> {
+    let odd_indices = graph
         .iter()
         .filter(|(_, node)| node.adjacent.len() % 2 != 0)
         .map(|(i, node)| node.index)
         .collect::<Vec<usize>>();
-    odd_indices.sort();
 
-    let mut is_odd_index = vec![false; matrix.len()];
-    for i in &odd_indices {
-        is_odd_index[*i] = true
-    }
-    println!("odd indices {:?}", odd_indices);
-    let mut secondary_matrix = vec![];
+    // HashMap<Mapped, Original>
+    // Indexing by TSPLIB format, indexing starts at 1.
+    let mut indices_mapping = HashMap::new();
 
-    for i in &odd_indices {
-        let mut row = matrix[*i]
-            .iter()
-            .enumerate()
-            .filter(|(i, item)| is_odd_index[*i])
-            .map(|(i, val)| val.to_owned())
-            .collect::<Vec<i64>>();
+    let nodes_to_map = odd_indices
+        .into_iter()
+        .map(|index| data_set.nodes.get(index).unwrap().to_owned())
+        .collect::<Vec<CityNode>>();
 
-        secondary_matrix.push(row)
-    }
-    let output = munkers(secondary_matrix);
-    let mut matches = vec![];
+    nodes_to_map
+        .iter()
+        .enumerate()
+        .for_each(|(index, city_node)| {
+            indices_mapping.insert(index + 1, (city_node.index) as usize);
+        });
 
-    for (index, row) in output.iter().enumerate() {
-        let mut match_pos = 0;
-        for col in 0..row.len() {
-            if row[col] == 1 {
-                match_pos = col
-            }
-        }
-        matches.push((index, match_pos))
-    }
-    println!("matches {:?}", matches);
-    // each record n[i] represent i-th node that is matched with n[i]-th node
-    let mut perfect_min_match = vec![];
-    for i in 0..output.len() {
-        let row = &output[i];
-        let (min_index, a) = row
-            .iter()
-            .enumerate()
-            .max_by_key(|(i, &val)| val.to_owned())
-            .unwrap();
-        let pair = (odd_indices[i], odd_indices[min_index]);
-        perfect_min_match.push(pair)
-    }
+    let mut tsp_subproblem = String::new();
+    tsp_subproblem.push_str("NAME : subproblem\n");
+    tsp_subproblem.push_str("COMMENT: NA\n");
+    tsp_subproblem.push_str("TYPE : TSP\n");
+    tsp_subproblem.push_str(&format!("DIMENSION : {}\n", nodes_to_map.len().to_string()));
+    tsp_subproblem.push_str("EDGE_WEIGHT_TYPE : EUC_2D");
+    tsp_subproblem.push_str("NODE_COORD_SECTION\n");
 
-    println!("perfect min match {:?}", perfect_min_match);
-    println!("graph before {:?}", graph);
+    nodes_to_map
+        .into_iter()
+        .enumerate()
+        .for_each(|(index, city_node)| {
+            let index_string = (index + 1).to_string();
+            let x_string = city_node.x.to_string();
+            let y_string = city_node.y.to_string();
+            let content = format!("{} {} {}\n", index_string, x_string, y_string);
+            tsp_subproblem.push_str(&content)
+        });
+    tsp_subproblem.push_str("EOF\n");
 
-    for pair in perfect_min_match {
+    let mut content_pipe = Command::new("echo");
+    content_pipe.arg(tsp_subproblem);
+    let content_pipe_child = content_pipe
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to execute process");
+
+    let invoke_blossom = Command::new("src/lib/blossom5/blossom5")
+        .arg("-g")
+        .arg("/dev/stdin")
+        .arg("-D")
+        .arg("-V")
+        .arg("-w")
+        .arg("./blossom_out.txt")
+        .stdin(Stdio::from(content_pipe_child.stdout.unwrap()))
+        .stdout(Stdio::null())
+        .spawn()
+        .unwrap()
+        .wait_with_output()
+        .unwrap();
+
+    let blossom_output = std::fs::read_to_string("./blossom_out.txt").unwrap();
+    // println!("output: {}", blossom_output);
+    let pairs = blossom_output
+        .lines()
+        .skip(1)
+        .map(|line| {
+            let mut elems = line.split_whitespace();
+            let ingoing = elems.next().unwrap().parse::<usize>().unwrap();
+            let outgoing = elems.next().unwrap().parse::<usize>().unwrap();
+            // Output indexing starts at 0
+            (ingoing + 1, outgoing + 1)
+        })
+        .collect::<Vec<(usize, usize)>>();
+    // println!("pairs: {:?}", pairs);
+    // println!("mappings: {:?}", indices_mapping);
+
+    let original_pairs = pairs
+        .into_iter()
+        .map(|(ingoing, outgoing)| {
+            let original_ingoing = indices_mapping.get(&ingoing).unwrap().to_owned() - 1;
+            let original_outgoing = indices_mapping.get(&outgoing).unwrap().to_owned() - 1;
+            (original_ingoing, original_outgoing)
+        })
+        .collect::<Vec<(usize, usize)>>();
+    // println!("original pairs: {:?}", original_pairs);
+
+    original_pairs
+}
+
+pub fn christofides_algorithm(data_set: DataSet) -> i64 {
+    let matrix = construct_adjacency_matrix(&data_set);
+    let mst = prim_algorithm(matrix.clone(), 0);
+    let tree = map_nodes_to_tree(&mst);
+    let mut graph = map_tree_to_graph(tree);
+    let pairs = get_tsp_subset(&graph, &data_set);
+
+    for pair in pairs {
         let (incoming, outgoing) = pair;
         let adjacent_to_incoming = &mut graph.get_mut(&incoming).unwrap().adjacent;
         adjacent_to_incoming.push(outgoing);
+        let adjacent_to_outgoing = &mut graph.get_mut(&outgoing).unwrap().adjacent;
+        adjacent_to_outgoing.push(incoming);
     }
-    println!("graph after {:?}", graph);
-    let mut is_even = graph.iter().all(|(_, node)| node.adjacent.len() % 2 == 0);
-    println!("is even? {}", is_even);
+
     let eulerian_circuit = hierholzer_algorithm(graph);
     let hamiltonian_circuit = shortcut_circuit(eulerian_circuit);
     let cost = calculate_cost(&matrix, hamiltonian_circuit);
-    12
+    println!("cost {}", cost);
+    cost
 }
 
 fn hierholzer_algorithm(mut graph: Graph) -> Vec<usize> {
@@ -137,7 +180,6 @@ fn hierholzer_algorithm(mut graph: Graph) -> Vec<usize> {
 }
 
 fn shortcut_circuit(tour: Vec<usize>) -> Vec<usize> {
-    print!("the tour is {:?}", tour);
     let mut visited = vec![false; tour.len()];
     let mut shorted = vec![];
     for stop in tour {

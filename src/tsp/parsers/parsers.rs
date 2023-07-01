@@ -13,9 +13,9 @@ pub struct DataSet {
 
 #[derive(Debug, Clone)]
 pub struct CityNode {
-    index: i64,
-    x: i64,
-    y: i64,
+    pub index: i64,
+    pub x: i64,
+    pub y: i64,
 }
 
 pub fn parse_data_set(data: &str) -> DataSet {
@@ -69,7 +69,7 @@ pub fn get_data_sets() -> Vec<DataSet> {
 }
 
 pub fn get_data_set() -> DataSet {
-    let content = fs::read_to_string("./src/tsp/datasets/pr76.tsp").unwrap();
+    let content = fs::read_to_string("./src/tsp/datasets/pr107.tsp").unwrap();
     parse_data_set(&content)
 }
 
