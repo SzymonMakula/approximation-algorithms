@@ -65,12 +65,12 @@ pub fn parse_data_set(data: &str) -> DataSet {
         nodes.push(node)
     });
 
-    let optimum = fs::read_to_string(format!("./src/tsp/datasets/opt/{}.opt.tsp", name))
+    let optimum = fs::read_to_string(format!("../datasets/tsp/opt/{}.opt.tsp", name))
         .unwrap()
         .parse::<i64>()
         .unwrap();
 
-    let opt_tour_path = format!("./src/tsp/datasets/opt/tour/{}.opt.tour", name);
+    let opt_tour_path = format!("../datasets/tsp/opt/tour/{}.opt.tour", name);
 
     let opt_tour = get_opt_tour(&opt_tour_path);
 
@@ -112,7 +112,7 @@ fn get_opt_tour(path: &str) -> Option<Vec<usize>> {
 }
 
 pub fn get_data_sets() -> Vec<DataSet> {
-    let dir = fs::read_dir("./src/tsp/datasets/problems").unwrap();
+    let dir = fs::read_dir("../datasets/tsp/problems").unwrap();
     dir.map(|entry| {
         let path = entry.unwrap().path();
         let content = fs::read_to_string(path).unwrap();
@@ -122,7 +122,7 @@ pub fn get_data_sets() -> Vec<DataSet> {
 }
 
 pub fn get_data_set() -> DataSet {
-    let content = fs::read_to_string("../datasets/problems/pr107.tsp").unwrap();
+    let content = fs::read_to_string("../datasets/tsp/problems/pr107.tsp").unwrap();
     parse_data_set(&content)
 }
 

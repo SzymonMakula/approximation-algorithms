@@ -5,7 +5,7 @@ use crate::knapsack::algorithms::types::SolveResult;
 use crate::knapsack::parsers::parsers::{parse_entry, DataSet, InstanceType};
 
 pub fn get_solve_results(algorithm: fn(DataSet) -> SolveResult) -> Vec<SolveResult> {
-    let folder = fs::read_dir("./src/knapsack/datasets").unwrap();
+    let folder = fs::read_dir("../datasets").unwrap();
 
     let mut values: Vec<SolveResult> = Vec::new();
     for file in folder {
@@ -23,7 +23,7 @@ pub fn get_solve_results(algorithm: fn(DataSet) -> SolveResult) -> Vec<SolveResu
 }
 
 pub fn get_data_sets() -> Vec<DataSet> {
-    let folder = fs::read_dir("./src/knapsack/datasets").unwrap();
+    let folder = fs::read_dir("../datasets").unwrap();
     let mut result: Vec<DataSet> = Vec::new();
     for file in folder {
         let path = file.unwrap().path();
@@ -41,7 +41,7 @@ pub fn get_data_set(path: &str) -> Vec<DataSet> {
 }
 
 pub fn get_uncorrelated_data_set() -> Vec<DataSet> {
-    let content = fs::read_to_string("./src/knapsack/datasets/knapPI_1_100_1000.csv").unwrap();
+    let content = fs::read_to_string("../datasets/knapPI_1_100_1000.csv").unwrap();
     parse_file_to_datasets(content)
 }
 

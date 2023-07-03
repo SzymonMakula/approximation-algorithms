@@ -86,13 +86,13 @@ fn get_min_perfect_matching(graph: &Graph, data_set: &DataSet) -> Vec<(usize, us
         .spawn()
         .expect("failed to execute process");
 
-    let invoke_blossom = Command::new("src/lib/blossom5/blossom5")
+    let invoke_blossom = Command::new("lib/blossom5/blossom5")
         .arg("-g")
         .arg("/dev/stdin")
         .arg("-D")
         .arg("-V")
         .arg("-w")
-        .arg("./blossom_out.txt")
+        .arg("./tmp/blossom_out.txt")
         .stdin(Stdio::from(content_pipe_child.stdout.unwrap()))
         .stdout(Stdio::null())
         .spawn()
@@ -100,7 +100,7 @@ fn get_min_perfect_matching(graph: &Graph, data_set: &DataSet) -> Vec<(usize, us
         .wait_with_output()
         .expect("failed to execute process");
 
-    let blossom_output = std::fs::read_to_string("./blossom_out.txt").unwrap();
+    let blossom_output = std::fs::read_to_string("tmp/blossom_out.txt").unwrap();
     let pairs = blossom_output
         .lines()
         .skip(1)

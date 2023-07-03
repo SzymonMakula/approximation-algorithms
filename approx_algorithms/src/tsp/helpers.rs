@@ -50,7 +50,7 @@ pub fn run_christofides() {
             tsp_runs.push(tsp_run)
         }
 
-        let path = format!("dist/tsp/christofides/{}.json", set.name);
+        let path = format!("../dist/tsp/christofides/{}.json", set.name);
 
         let tsp_solve_result = TspSolveResult {
             runs: runs_count,
@@ -59,7 +59,7 @@ pub fn run_christofides() {
         };
         let json_string = serde_json::to_string(&tsp_solve_result).unwrap();
 
-        fs::create_dir_all("dist/tsp/christofides").expect("Failed to create directories");
+        fs::create_dir_all("../dist/tsp/christofides").expect("Failed to create directories");
         fs::write(path, json_string).unwrap();
     });
 }
@@ -84,14 +84,14 @@ pub fn run_approx_tsp() {
             tsp_runs.push(tsp_run)
         }
 
-        let path = format!("dist/tsp/dtree/{}.json", set.name);
+        let path = format!("../dist/tsp/dtree/{}.json", set.name);
 
         let tsp_solve_result = TspSolveResult {
             runs: runs_count,
             data_set: set,
             run_results: tsp_runs,
         };
-        fs::create_dir_all("dist/tsp/dtree").expect("Failed to create directories");
+        fs::create_dir_all("../dist/tsp/dtree").expect("Failed to create directories");
         let json_string = serde_json::to_string(&tsp_solve_result).unwrap();
 
         std::fs::write(path, json_string).unwrap();
