@@ -8,5 +8,4 @@ edition = "2021"
 [dependencies]
 csv = "1.2.0"
 serde = { version = "1", features = ["derive"] }
-plotters = "0.3.4"
-charts = "0.3.0"
+serde_json = "1.0.99"

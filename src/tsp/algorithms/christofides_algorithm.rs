@@ -36,7 +36,7 @@ fn map_tree_to_graph(tree: Vec<TreeNode>) -> Graph {
     graph
 }
 
-fn get_tsp_subset(graph: &Graph, data_set: &DataSet) -> Vec<(usize, usize)> {
+fn get_min_perfect_matching(graph: &Graph, data_set: &DataSet) -> Vec<(usize, usize)> {
     let odd_indices = graph
         .iter()
         .filter(|(_, node)| node.adjacent.len() % 2 != 0)
@@ -96,12 +96,11 @@ fn get_tsp_subset(graph: &Graph, data_set: &DataSet) -> Vec<(usize, usize)> {
         .stdin(Stdio::from(content_pipe_child.stdout.unwrap()))
         .stdout(Stdio::null())
         .spawn()
-        .unwrap()
+        .expect("failed to execute process")
         .wait_with_output()
-        .unwrap();
+        .expect("failed to execute process");
 
     let blossom_output = std::fs::read_to_string("./blossom_out.txt").unwrap();
-    // println!("output: {}", blossom_output);
     let pairs = blossom_output
         .lines()
         .skip(1)
@@ -113,8 +112,6 @@ fn get_tsp_subset(graph: &Graph, data_set: &DataSet) -> Vec<(usize, usize)> {
             (ingoing + 1, outgoing + 1)
         })
         .collect::<Vec<(usize, usize)>>();
-    // println!("pairs: {:?}", pairs);
-    // println!("mappings: {:?}", indices_mapping);
 
     let original_pairs = pairs
         .into_iter()
@@ -124,17 +121,16 @@ fn get_tsp_subset(graph: &Graph, data_set: &DataSet) -> Vec<(usize, usize)> {
             (original_ingoing, original_outgoing)
         })
         .collect::<Vec<(usize, usize)>>();
-    // println!("original pairs: {:?}", original_pairs);
 
     original_pairs
 }
 
-pub fn christofides_algorithm(data_set: DataSet) -> i64 {
+pub fn christofides_algorithm(data_set: &DataSet) -> (i64, Vec<usize>) {
     let matrix = construct_adjacency_matrix(&data_set);
     let mst = prim_algorithm(matrix.clone(), 0);
     let tree = map_nodes_to_tree(&mst);
     let mut graph = map_tree_to_graph(tree);
-    let pairs = get_tsp_subset(&graph, &data_set);
+    let pairs = get_min_perfect_matching(&graph, &data_set);
 
     for pair in pairs {
         let (incoming, outgoing) = pair;
@@ -146,15 +142,21 @@ pub fn christofides_algorithm(data_set: DataSet) -> i64 {
 
     let eulerian_circuit = hierholzer_algorithm(graph);
     let hamiltonian_circuit = shortcut_circuit(eulerian_circuit);
-    let cost = calculate_cost(&matrix, hamiltonian_circuit);
-    println!("cost {}", cost);
-    cost
+    let cost = calculate_cost(&matrix, &hamiltonian_circuit);
+    let mut tour = hamiltonian_circuit
+        .into_iter()
+        .map(|stop| stop + 1)
+        .collect::<Vec<usize>>();
+    tour.push(tour[0]);
+
+    (cost, tour)
 }
 
 fn hierholzer_algorithm(mut graph: Graph) -> Vec<usize> {
     let mut stack = vec![];
     let mut tour = vec![];
-    stack.push(graph.get(&0).unwrap().index);
+    let first_index = graph.get(&0).unwrap().index;
+    stack.push(first_index);
     while !stack.is_empty() {
         let mut vertex_index = stack.last().unwrap();
         let vertex = graph.get_mut(&vertex_index).unwrap();
@@ -164,9 +166,6 @@ fn hierholzer_algorithm(mut graph: Graph) -> Vec<usize> {
         } else {
             let index = vertex.adjacent.pop().unwrap();
             let outgoing_vertex = graph.get_mut(&index).unwrap();
-
-            // println!("\n the ingoing vertex {:?}", vertex_index);
-            // println!("\n the outgoing vertex {:?}\n", outgoing_vertex);
             let element_pos = outgoing_vertex
                 .adjacent
                 .iter()
@@ -191,7 +190,7 @@ fn shortcut_circuit(tour: Vec<usize>) -> Vec<usize> {
     shorted
 }
 
-fn calculate_cost(matrix: &Matrix, tour: Vec<usize>) -> i64 {
+fn calculate_cost(matrix: &Matrix, tour: &Vec<usize>) -> i64 {
     let mut cost = 0;
     let start = tour[0];
     let mut previous_stop = start;
