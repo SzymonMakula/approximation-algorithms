@@ -190,7 +190,7 @@ fn shortcut_circuit(tour: Vec<usize>) -> Vec<usize> {
     shorted
 }
 
-fn calculate_cost(matrix: &Matrix, tour: &Vec<usize>) -> i64 {
+pub fn calculate_cost(matrix: &Matrix, tour: &Vec<usize>) -> i64 {
     let mut cost = 0;
     let start = tour[0];
     let mut previous_stop = start;
