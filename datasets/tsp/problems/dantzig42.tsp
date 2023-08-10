@@ -1,4 +1,4 @@
-NAME: denzig
+NAME: dantzig42
 TYPE: TSP
 COMMENT: 100-city problem A (Krolak/Felts/Nelson)
 DIMENSION: 42

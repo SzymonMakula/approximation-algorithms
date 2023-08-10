@@ -101,7 +101,6 @@ fn get_opt_tour(path: &str) -> Option<Vec<usize>> {
             .skip(1)
             .take(dimension + 1)
             .map(|line| {
-                println!("the line {}", line);
                 // Last element is the beginning with negative sign, i.e. -1
                 line.parse::<usize>().unwrap_or(1)
             })
