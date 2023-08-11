@@ -11,7 +11,7 @@ pub fn approx_tsp_tour(matrix: Matrix) -> (i64, Vec<usize>) {
     (cost, tour)
 }
 
-fn create_tour(order: Vec<usize>) -> Vec<usize> {
+pub fn create_tour(order: Vec<usize>) -> Vec<usize> {
     let mut tour = order
         .into_iter()
         .map(|stop| stop + 1)

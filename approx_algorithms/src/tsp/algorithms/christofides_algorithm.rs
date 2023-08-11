@@ -5,7 +5,7 @@ use std::ops::Index;
 use std::os::unix::process::parent_id;
 use std::process::{Command, Stdio};
 
-use crate::tsp::algorithms::approx_tsp_tour::sum_path;
+use crate::tsp::algorithms::approx_tsp_tour::create_tour;
 use crate::tsp::algorithms::munkers::munkers;
 use crate::tsp::algorithms::prim::{prim_algorithm, Matrix};
 use crate::tsp::helpers::{map_nodes_to_tree, TreeNode};
@@ -125,13 +125,7 @@ fn get_min_perfect_matching(graph: &Graph, data_set: &DataSet) -> Vec<(usize, us
     original_pairs
 }
 
-pub fn christofides_algorithm(data_set: &DataSet) -> (i64, Vec<usize>) {
-    let matrix = construct_adjacency_matrix(&data_set);
-    let mst = prim_algorithm(matrix.clone(), 0);
-    let tree = map_nodes_to_tree(&mst);
-    let mut graph = map_tree_to_graph(tree);
-    let pairs = get_min_perfect_matching(&graph, &data_set);
-
+fn add_edges_to_graph(pairs: Vec<(usize, usize)>, graph: &mut Graph) {
     for pair in pairs {
         let (incoming, outgoing) = pair;
         let adjacent_to_incoming = &mut graph.get_mut(&incoming).unwrap().adjacent;
@@ -139,16 +133,20 @@ pub fn christofides_algorithm(data_set: &DataSet) -> (i64, Vec<usize>) {
         let adjacent_to_outgoing = &mut graph.get_mut(&outgoing).unwrap().adjacent;
         adjacent_to_outgoing.push(incoming);
     }
+}
+
+pub fn christofides_algorithm(data_set: &DataSet) -> (i64, Vec<usize>) {
+    let matrix = construct_adjacency_matrix(&data_set);
+    let mst = prim_algorithm(matrix.clone(), 0);
+    let tree = map_nodes_to_tree(&mst);
+    let mut graph = map_tree_to_graph(tree);
+    let pairs = get_min_perfect_matching(&graph, &data_set);
+    add_edges_to_graph(pairs, &mut graph);
 
     let eulerian_circuit = hierholzer_algorithm(graph);
     let hamiltonian_circuit = shortcut_circuit(eulerian_circuit);
     let cost = calculate_cost(&matrix, &hamiltonian_circuit);
-    let mut tour = hamiltonian_circuit
-        .into_iter()
-        .map(|stop| stop + 1)
-        .collect::<Vec<usize>>();
-    tour.push(tour[0]);
-
+    let mut tour = create_tour(hamiltonian_circuit);
     (cost, tour)
 }
 
