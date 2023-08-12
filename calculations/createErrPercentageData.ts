@@ -12,6 +12,13 @@ problems.forEach(problemName => {
         const file = JSON.parse(fileTextData) as Benchmark
 
 
+        if (benchmark === "pr439.json" && problemName === "christofides") {
+            file.run_results[0].tour.forEach((stop, index) => {
+                if (file.run_results[0].tour[index] !== file.run_results[1].tour[index]) {
+                    console.log("first ", file.run_results[0].tour[index], "second", file.run_results[1].tour[index])
+                }
+            })
+        }
         const received_values = file.run_results.map(run => run.result)
         const averageResult = received_values.reduce((acc, currentValue) => acc + currentValue, 0) / file.runs
         const errPercentage = Number(Math.abs((file.data_set.optimum - averageResult) / averageResult) * 100)
@@ -25,7 +32,6 @@ problems.forEach(problemName => {
         dimension: Object.keys(error_record),
         errorPercentage: Object.values(error_record).map(valueArray => Number(valueArray[0].toFixed(2)))
     }
-    console.log(output)
     try {
         mkdirSync(`../dist/calculations/tsp/${problemName}`, {recursive: true})
     } catch (err) {
