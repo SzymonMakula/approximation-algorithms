@@ -66,7 +66,7 @@ pub fn _dynamic_programming_knapsack(
     (record.value, record.chosen_items)
 }
 
-pub fn dynamic_programming_knapsack(data_set: DataSet) -> SolveResult {
+pub fn dynamic_programming_knapsack(data_set: DataSet) -> i64 {
     let values = data_set
         .records
         .iter()
@@ -78,15 +78,8 @@ pub fn dynamic_programming_knapsack(data_set: DataSet) -> SolveResult {
         .map(|record| record.weight)
         .collect::<Vec<i64>>();
 
-    let now = Instant::now();
     let (result, items) = _dynamic_programming_knapsack(values, weights, data_set.capacity);
-
-    SolveResult {
-        result,
-        execution_time: now.elapsed(),
-        ratio: result as f64 / data_set.optimal_value as f64,
-        data_set,
-    }
+    result
 }
 
 fn get_dominating_pairs(mut pairs: Vec<Record>) -> Vec<Record> {

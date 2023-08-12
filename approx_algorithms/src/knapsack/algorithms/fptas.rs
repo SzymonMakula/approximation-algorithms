@@ -6,7 +6,7 @@ use crate::knapsack::algorithms::dynamic_programming::{
 use crate::knapsack::algorithms::types::SolveResult;
 use crate::knapsack::parsers::parsers::DataSet;
 
-pub fn fptas_knapsack(data_set: DataSet, e: f64) -> SolveResult {
+pub fn fptas_knapsack(data_set: DataSet, e: f64) -> i64 {
     let now = Instant::now();
     let items_count = data_set.records.len() as f64;
     let values = data_set
@@ -36,11 +36,5 @@ pub fn fptas_knapsack(data_set: DataSet, e: f64) -> SolveResult {
     let (val, items) = _dynamic_programming_knapsack(new_values, weights, data_set.capacity);
 
     let result = items.into_iter().map(|index| values[index]).sum::<i64>();
-
-    SolveResult {
-        result,
-        ratio: result as f64 / data_set.optimal_value as f64,
-        data_set,
-        execution_time: now.elapsed(),
-    }
+    result
 }

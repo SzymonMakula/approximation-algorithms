@@ -10,9 +10,7 @@ struct Backpack {
     value: i64,
 }
 
-pub fn greedy_algorithm(data_set: DataSet) -> SolveResult {
-    let now = Instant::now();
-
+pub fn greedy_algorithm(data_set: DataSet) -> i64 {
     let mut records_clone = data_set.records.to_vec();
 
     records_clone.sort_by(|a, b| {
@@ -42,13 +40,6 @@ pub fn greedy_algorithm(data_set: DataSet) -> SolveResult {
     }
 
     let value = backpack.items.iter().map(|item| item.value).sum::<i64>();
-    let ratio = value as f64 / data_set.optimal_value as f64;
-    let elapsed = now.elapsed();
 
-    SolveResult {
-        result: value,
-        ratio,
-        data_set,
-        execution_time: elapsed,
-    }
+    value
 }

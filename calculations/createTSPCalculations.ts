@@ -1,19 +1,5 @@
 import {mkdirSync, readdirSync, readFileSync, writeFileSync} from "fs";
-
-type RunResult = {
-    elapsed_micros: number;
-    result: number
-}
-
-type Benchmark = {
-    runs: number,
-    data_set: {
-        name: string,
-        dimension: number,
-        optimum: number,
-    },
-    run_results: RunResult[]
-}
+import {Benchmark} from "./types";
 
 
 const problems = readdirSync("../dist/tsp")
