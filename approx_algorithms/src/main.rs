@@ -4,8 +4,8 @@ use approx_algorithms::knapsack::helpers::helpers::{
 };
 
 fn main() {
-    run_greedy_kp();
+    // run_greedy_kp();
     run_fptas_kp(0.4);
-    run_dynamic_kp();
-    run_dynamic_weight_kp();
+    // run_dynamic_kp();
+    // run_dynamic_weight_kp();
 }

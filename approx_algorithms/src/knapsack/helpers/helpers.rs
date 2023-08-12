@@ -110,10 +110,15 @@ pub fn run_dynamic_kp() {
             let name = set.title.to_string();
             let optimum_value = set.optimal_value;
             let now = Instant::now();
+            let result = dynamic_programming_knapsack(set);
+            assert_eq!(optimum_value, result);
+            let err = (optimum_value - result) as f64 * 100.0 / result as f64;
 
-            dynamic_programming_knapsack(set);
-            let elapsed = now.elapsed().as_micros();
-            println!("solving dynamic with {} in time {}um", name, elapsed)
+            let elapsed = now.elapsed().as_secs();
+            println!(
+                "solving dynamic with {} in time {}s, err {}",
+                name, elapsed, err
+            )
         }
     }
 }

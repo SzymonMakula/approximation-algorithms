@@ -1,4 +1,5 @@
 use std::cmp::{max, min};
+use std::fs::read_to_string;
 use std::time::Instant;
 
 use crate::knapsack::algorithms::types::SolveResult;
@@ -11,7 +12,6 @@ struct Record {
     pub value: i64,
     pub weight: i64,
     pub index: usize,
-    chosen_items: Vec<usize>,
 }
 
 pub fn _dynamic_programming_knapsack(
@@ -25,14 +25,12 @@ pub fn _dynamic_programming_knapsack(
         index: usize::MAX,
         weight: 0,
         value: 0,
-        chosen_items: vec![],
     };
 
     let first_item = Record {
         index: 0,
         value: values[0],
         weight: weights[0],
-        chosen_items: vec![0],
     };
 
     let mut A: Vec<Vec<Record>> = vec![vec![mock, first_item]; items_count];
@@ -45,11 +43,6 @@ pub fn _dynamic_programming_knapsack(
                     weight: record.weight + weights[j],
                     value: record.value + values[j],
                     index: j,
-                    chosen_items: {
-                        let mut new_vec = record.chosen_items.clone();
-                        new_vec.push(j);
-                        new_vec
-                    },
                 };
                 A[j].push(item)
             }
@@ -57,13 +50,46 @@ pub fn _dynamic_programming_knapsack(
         A[j] = get_dominating_pairs(A[j].clone())
     }
 
-    let record = A
-        .remove(A.len() - 1)
-        .into_iter()
+    let max_value_pair = A[A.len() - 1]
+        .iter()
         .max_by_key(|record| record.value)
-        .unwrap();
+        .unwrap()
+        .clone();
 
-    (record.value, record.chosen_items)
+    let mut previous_pair_value = max_value_pair.value;
+    let mut previous_pair_weight = max_value_pair.weight;
+    let mut chosen_items = vec![];
+
+    for i in 0..A.len() {
+        let index = A.len() - 1 - i;
+        if index == 0 {
+            let does_include = A[index].iter().any(|record| {
+                (record.value == previous_pair_value - values[index])
+                    && (record.weight == previous_pair_weight - weights[index])
+            });
+            if does_include {
+                chosen_items.push(index);
+                previous_pair_value = previous_pair_value - values[index];
+                previous_pair_weight = previous_pair_weight - weights[index];
+            }
+            break;
+        }
+        let current_pairs = &A[index - 1];
+        let does_include = current_pairs
+            .iter()
+            .find(|record| {
+                (record.value == previous_pair_value - values[index])
+                    && (record.weight == previous_pair_weight - weights[index])
+            })
+            .is_some();
+        if does_include {
+            chosen_items.push(index);
+            previous_pair_value = previous_pair_value - values[index];
+            previous_pair_weight = previous_pair_weight - weights[index];
+        }
+    }
+
+    (max_value_pair.value, chosen_items)
 }
 
 pub fn dynamic_programming_knapsack(data_set: DataSet) -> i64 {
@@ -78,7 +104,11 @@ pub fn dynamic_programming_knapsack(data_set: DataSet) -> i64 {
         .map(|record| record.weight)
         .collect::<Vec<i64>>();
 
-    let (result, items) = _dynamic_programming_knapsack(values, weights, data_set.capacity);
+    let (result, items) = _dynamic_programming_knapsack(values.clone(), weights, data_set.capacity);
+
+    let sum = items.into_iter().map(|index| values[index]).sum::<i64>();
+
+    assert_eq!(result, sum);
     result
 }
 
