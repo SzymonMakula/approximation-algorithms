@@ -2,6 +2,8 @@ use std::fs;
 use std::path::Path;
 use std::time::Instant;
 
+use serde::{Deserialize, Serialize};
+
 use crate::knapsack::algorithms::dynamic_programming::{
     dynamic_programming_knapsack, kp_dynamic_by_weight,
 };
@@ -81,15 +83,37 @@ pub fn run_greedy_kp() {
     ];
     for path in DATA_SETS_PATHS {
         let data_sets = get_data_set(&format!("../datasets/knapsack/{}.csv", path));
+        let mut runs = vec![];
+
         for set in data_sets {
             let name = set.title.to_string();
             let optimum_value = set.optimal_value;
+            let capacity = set.capacity;
             let now = Instant::now();
 
-            greedy_algorithm(set);
+            let result = greedy_algorithm(set);
             let elapsed = now.elapsed().as_micros();
-            println!("solving greedy with {} in time {}um", name, elapsed)
+            println!("solving greedy with {}", name);
+            let run_data = KnapsackRunData {
+                time_micros: elapsed,
+                optimum_value,
+                result,
+                name,
+                capacity,
+            };
+            runs.push(run_data)
         }
+
+        let knapsack_solve_result = KnapsackSolveResult {
+            runs,
+            name: path.to_string(),
+        };
+
+        let save_path = format!("../dist/knapsack/greedy/{}.json", path);
+        fs::create_dir_all(format!("../dist/knapsack/greedy"))
+            .expect("Failed to create directories");
+        let json_string = serde_json::to_string(&knapsack_solve_result).unwrap();
+        fs::write(save_path, json_string).unwrap();
     }
 }
 
@@ -97,29 +121,45 @@ pub fn run_dynamic_kp() {
     let DATA_SETS_PATHS = vec![
         "knapPI_1_100_1000",
         "knapPI_1_100_10000",
-        "knapPI_1_1000_1000",
-        "knapPI_1_1000_10000",
+        // "knapPI_1_1000_1000",
+        // "knapPI_1_1000_10000",
         "knapPI_3_100_1000",
         "knapPI_3_100_10000",
-        "knapPI_3_1000_1000",
-        "knapPI_3_1000_10000",
+        // "knapPI_3_1000_1000",
+        // "knapPI_3_1000_10000",
     ];
     for path in DATA_SETS_PATHS {
         let data_sets = get_data_set(&format!("../datasets/knapsack/{}.csv", path));
+
+        let mut runs = vec![];
         for set in data_sets {
             let name = set.title.to_string();
             let optimum_value = set.optimal_value;
+            let capacity = set.capacity;
             let now = Instant::now();
             let result = dynamic_programming_knapsack(set);
-            assert_eq!(optimum_value, result);
-            let err = (optimum_value - result) as f64 * 100.0 / result as f64;
 
-            let elapsed = now.elapsed().as_secs();
-            println!(
-                "solving dynamic with {} in time {}s, err {}",
-                name, elapsed, err
-            )
+            let elapsed = now.elapsed().as_micros();
+            println!("solving dynamic with {} in time {}", name, elapsed);
+
+            let run_data = KnapsackRunData {
+                time_micros: elapsed,
+                optimum_value,
+                result,
+                name,
+                capacity,
+            };
+            runs.push(run_data)
         }
+        let knapsack_solve_result = KnapsackSolveResult {
+            runs,
+            name: path.to_string(),
+        };
+        let save_path = format!("../dist/knapsack/dynamic/{}.json", path);
+        fs::create_dir_all(format!("../dist/knapsack/dynamic/"))
+            .expect("Failed to create directories");
+        let json_string = serde_json::to_string(&knapsack_solve_result).unwrap();
+        fs::write(save_path, json_string).unwrap();
     }
 }
 
@@ -162,28 +202,63 @@ pub fn run_dynamic_weight_kp() {
 pub fn run_fptas_kp(e: f64) {
     let DATA_SETS_PATHS = vec![
         "knapPI_1_100_1000",
-        "knapPI_1_100_10000",
-        "knapPI_1_1000_1000",
-        "knapPI_1_1000_10000",
-        "knapPI_3_100_1000",
-        "knapPI_3_100_10000",
-        "knapPI_3_1000_1000",
-        "knapPI_3_1000_10000",
+        // "knapPI_1_100_1000",
+        // "knapPI_1_100_10000",
+        // "knapPI_1_1000_1000",
+        // "knapPI_1_1000_10000",
+        // "knapPI_3_100_1000",
+        // "knapPI_3_100_10000",
+        // "knapPI_3_1000_1000",
+        // "knapPI_3_1000_10000",
     ];
     for path in DATA_SETS_PATHS {
         let data_sets = get_data_set(&format!("../datasets/knapsack/{}.csv", path));
+        let mut runs = vec![];
+
         for set in data_sets {
             let name = set.title.to_string();
             let optimum_value = set.optimal_value;
-            let now = Instant::now();
+            let capacity = set.capacity;
 
+            let now = Instant::now();
             let result = fptas_knapsack(set, e);
-            let elapsed = now.elapsed().as_secs();
-            let err = (optimum_value - result) as f64 * 100.0 / result as f64;
-            println!(
-                "solving fptas with {} in time {}s, error {}",
-                name, elapsed, err
-            )
+            let elapsed = now.elapsed().as_micros();
+
+            println!("solving fptas with {}", name);
+            let run_data = KnapsackRunData {
+                time_micros: elapsed,
+                optimum_value,
+                result,
+                name,
+                capacity,
+            };
+            runs.push(run_data)
         }
+
+        let knapsack_solve_result = KnapsackSolveResult {
+            runs,
+            name: path.to_string(),
+        };
+
+        let save_path = format!("../dist/knapsack/fptas/{}/{}.json", e.to_string(), path);
+        fs::create_dir_all(format!("../dist/knapsack/fptas/{}", e.to_string()))
+            .expect("Failed to create directories");
+        let json_string = serde_json::to_string(&knapsack_solve_result).unwrap();
+        fs::write(save_path, json_string).unwrap();
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct KnapsackSolveResult {
+    name: String,
+    runs: Vec<KnapsackRunData>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct KnapsackRunData {
+    name: String,
+    optimum_value: i64,
+    time_micros: u128,
+    capacity: i64,
+    result: i64,
 }

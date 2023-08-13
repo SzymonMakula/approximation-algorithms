@@ -5,3 +5,4 @@ blossom_out.txt
 env
 approx_algorithms/target
 target
+.env
