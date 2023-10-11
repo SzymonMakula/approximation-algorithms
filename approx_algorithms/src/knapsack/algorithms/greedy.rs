@@ -10,7 +10,7 @@ struct Backpack {
     value: i64,
 }
 
-pub fn greedy_algorithm(data_set: DataSet) -> i64 {
+pub fn greedy_knapsack(data_set: DataSet) -> i64 {
     let mut records_clone = data_set.records.to_vec();
 
     records_clone.sort_by(|a, b| {

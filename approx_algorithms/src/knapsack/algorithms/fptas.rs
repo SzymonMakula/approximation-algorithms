@@ -33,14 +33,10 @@ pub fn fptas_knapsack(data_set: DataSet, e: f64) -> i64 {
         .collect::<Vec<i64>>();
 
     let values_sum = new_values.iter().sum::<i64>();
-    println!(
-        "values is greater than capacity: {}. K is {}, set is {}",
-        values_sum > data_set.capacity,
-        K,
-        data_set.title
-    );
+    let weights_sum = weights.iter().sum::<i64>();
 
-    let (val, items) = _dynamic_programming_knapsack(new_values, weights, data_set.capacity);
+
+    let (val, items, _) = _dynamic_programming_knapsack(new_values, weights, data_set.capacity);
 
     let result = items.into_iter().map(|index| values[index]).sum::<i64>();
     result

@@ -5,10 +5,10 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 
 use crate::knapsack::algorithms::dynamic_programming::{
-    dynamic_programming_knapsack, kp_dynamic_by_weight,
+    dynamic_programming_knapsack, kp_dynamic_by_weight, Estimate,
 };
 use crate::knapsack::algorithms::fptas::fptas_knapsack;
-use crate::knapsack::algorithms::greedy::greedy_algorithm;
+use crate::knapsack::algorithms::greedy::greedy_knapsack;
 use crate::knapsack::algorithms::types::SolveResult;
 use crate::knapsack::parsers::parsers::{parse_entry, DataSet, InstanceType};
 
@@ -91,7 +91,7 @@ pub fn run_greedy_kp() {
             let capacity = set.capacity;
             let now = Instant::now();
 
-            let result = greedy_algorithm(set);
+            let result = greedy_knapsack(set);
             let elapsed = now.elapsed().as_micros();
             println!("solving greedy with {}", name);
             let run_data = KnapsackRunData {
@@ -119,12 +119,12 @@ pub fn run_greedy_kp() {
 
 pub fn run_dynamic_kp() {
     let DATA_SETS_PATHS = vec![
-        "knapPI_1_100_1000",
+        // "knapPI_1_100_1000",
         "knapPI_1_100_10000",
         // "knapPI_1_1000_1000",
         // "knapPI_1_1000_10000",
-        "knapPI_3_100_1000",
-        "knapPI_3_100_10000",
+        // "knapPI_3_100_1000",
+        // "knapPI_3_100_10000",
         // "knapPI_3_1000_1000",
         // "knapPI_3_1000_10000",
     ];
@@ -132,15 +132,79 @@ pub fn run_dynamic_kp() {
         let data_sets = get_data_set(&format!("../datasets/knapsack/{}.csv", path));
 
         let mut runs = vec![];
+        let mut estimates = vec![];
         for set in data_sets {
             let name = set.title.to_string();
             let optimum_value = set.optimal_value;
             let capacity = set.capacity;
             let now = Instant::now();
-            let result = dynamic_programming_knapsack(set);
+            let (result, estimate) = dynamic_programming_knapsack(set);
 
             let elapsed = now.elapsed().as_micros();
             println!("solving dynamic with {} in time {}", name, elapsed);
+
+            let run_data = KnapsackRunData {
+                time_micros: elapsed,
+                optimum_value,
+                result,
+                name,
+                capacity,
+            };
+            estimates.push(estimate);
+            runs.push(run_data)
+        }
+        let knapsack_solve_result = KnapsackSolveResult {
+            runs,
+            name: path.to_string(),
+        };
+        let save_path = format!("../dist/knapsack/dynamic/{}.json", path);
+        fs::create_dir_all(format!("../dist/knapsack/dynamic/"))
+            .expect("Failed to create directories");
+        let json_string = serde_json::to_string(&knapsack_solve_result).unwrap();
+        fs::write(save_path, json_string).unwrap();
+
+        let estimatesStruct = Estimates { estimates };
+
+        let json_string = serde_json::to_string(&estimatesStruct).unwrap();
+        fs::write("../dist/knapsack/dynamic/estimate.json", json_string).unwrap();
+    }
+}
+
+pub fn run_dynamic_weight_kp() {
+    let DATA_SETS_PATHS = vec![
+        // "knapPI_1_100_1000",
+        // "knapPI_1_100_10000",
+        // "knapPI_1_1000_1000",
+        "knapPI_1_1000_10000",
+        // "knapPI_3_100_1000",
+        // "knapPI_3_100_10000",
+        "knapPI_3_1000_1000",
+        // "knapPI_3_1000_10000",
+    ];
+
+    for path in DATA_SETS_PATHS {
+        let mut runs = vec![];
+
+        let data_sets = get_data_set(&format!("../datasets/knapsack/{}.csv", path));
+        for set in data_sets {
+            let name = set.title.to_string();
+            let optimum_value = set.optimal_value;
+            let capacity = set.capacity;
+            let now = Instant::now();
+            let values = set
+                .records
+                .iter()
+                .map(|record| record.value)
+                .collect::<Vec<i64>>();
+            let weights = set
+                .records
+                .iter()
+                .map(|record| record.weight)
+                .collect::<Vec<i64>>();
+
+            let result = kp_dynamic_by_weight(values, weights, set.capacity);
+            let elapsed = now.elapsed().as_micros();
+            println!("solving dynamic weight with {} in time {}um", name, elapsed);
 
             let run_data = KnapsackRunData {
                 time_micros: elapsed,
@@ -155,59 +219,23 @@ pub fn run_dynamic_kp() {
             runs,
             name: path.to_string(),
         };
-        let save_path = format!("../dist/knapsack/dynamic/{}.json", path);
-        fs::create_dir_all(format!("../dist/knapsack/dynamic/"))
+        let save_path = format!("../dist/knapsack/dynamicW/{}.json", path);
+        fs::create_dir_all(format!("../dist/knapsack/dynamicW/"))
             .expect("Failed to create directories");
+
         let json_string = serde_json::to_string(&knapsack_solve_result).unwrap();
         fs::write(save_path, json_string).unwrap();
     }
 }
 
-pub fn run_dynamic_weight_kp() {
-    let DATA_SETS_PATHS = vec![
-        "knapPI_1_100_1000",
-        "knapPI_1_100_10000",
-        "knapPI_1_1000_1000",
-        "knapPI_1_1000_10000",
-        "knapPI_3_100_1000",
-        "knapPI_3_100_10000",
-        "knapPI_3_1000_1000",
-        "knapPI_3_1000_10000",
-    ];
-
-    for path in DATA_SETS_PATHS {
-        let data_sets = get_data_set(&format!("../datasets/knapsack/{}.csv", path));
-        for set in data_sets {
-            let name = set.title.to_string();
-            let optimum_value = set.optimal_value;
-            let now = Instant::now();
-            let values = set
-                .records
-                .iter()
-                .map(|record| record.value)
-                .collect::<Vec<i64>>();
-            let weights = set
-                .records
-                .iter()
-                .map(|record| record.weight)
-                .collect::<Vec<i64>>();
-
-            kp_dynamic_by_weight(values, weights, set.capacity);
-            let elapsed = now.elapsed().as_micros();
-            println!("solving dynamic weight with {} in time {}um", name, elapsed)
-        }
-    }
-}
-
 pub fn run_fptas_kp(e: f64) {
     let DATA_SETS_PATHS = vec![
-        "knapPI_1_100_1000",
         // "knapPI_1_100_1000",
         // "knapPI_1_100_10000",
-        // "knapPI_1_1000_1000",
+        "knapPI_1_1000_1000",
         // "knapPI_1_1000_10000",
         // "knapPI_3_100_1000",
-        // "knapPI_3_100_10000",
+        "knapPI_3_100_10000",
         // "knapPI_3_1000_1000",
         // "knapPI_3_1000_10000",
     ];
@@ -246,6 +274,11 @@ pub fn run_fptas_kp(e: f64) {
         let json_string = serde_json::to_string(&knapsack_solve_result).unwrap();
         fs::write(save_path, json_string).unwrap();
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Estimates {
+    estimates: Vec<Estimate>,
 }
 
 #[derive(Serialize, Deserialize)]

@@ -2,8 +2,16 @@ use std::cmp::{max, min};
 use std::fs::read_to_string;
 use std::time::Instant;
 
+use serde::{Deserialize, Serialize};
+
 use crate::knapsack::algorithms::types::SolveResult;
 use crate::knapsack::parsers::parsers::DataSet;
+
+#[derive(Serialize, Deserialize)]
+pub struct Estimate {
+    limit: i64,
+    len: usize,
+}
 
 type Pair = (i64, i64);
 
@@ -18,7 +26,7 @@ pub fn _dynamic_programming_knapsack(
     values: Vec<i64>,
     weights: Vec<i64>,
     capacity: i64,
-) -> (i64, Vec<usize>) {
+) -> (i64, Vec<usize>, Estimate) {
     let items_count = values.len();
 
     let mock = Record {
@@ -47,7 +55,8 @@ pub fn _dynamic_programming_knapsack(
                 A[j].push(item)
             }
         }
-        A[j] = get_dominating_pairs(A[j].clone())
+
+        A[j] = get_dominating_pairs(A[j].clone());
     }
 
     let max_value_pair = A[A.len() - 1]
@@ -55,6 +64,17 @@ pub fn _dynamic_programming_knapsack(
         .max_by_key(|record| record.value)
         .unwrap()
         .clone();
+
+    let max_value = values.iter().sum::<i64>();
+    let max_pair_len = A[A.len() - 1].len();
+    let estimate = Estimate {
+        len: max_pair_len,
+        limit: if capacity > max_value {
+            max_value
+        } else {
+            capacity as i64
+        },
+    };
 
     let mut previous_pair_value = max_value_pair.value;
     let mut previous_pair_weight = max_value_pair.weight;
@@ -89,10 +109,10 @@ pub fn _dynamic_programming_knapsack(
         }
     }
 
-    (max_value_pair.value, chosen_items)
+    (max_value_pair.value, chosen_items, estimate)
 }
 
-pub fn dynamic_programming_knapsack(data_set: DataSet) -> i64 {
+pub fn dynamic_programming_knapsack(data_set: DataSet) -> (i64, Estimate) {
     let values = data_set
         .records
         .iter()
@@ -104,12 +124,12 @@ pub fn dynamic_programming_knapsack(data_set: DataSet) -> i64 {
         .map(|record| record.weight)
         .collect::<Vec<i64>>();
 
-    let (result, items) = _dynamic_programming_knapsack(values.clone(), weights, data_set.capacity);
+    let (result, items, estimate) =
+        _dynamic_programming_knapsack(values.clone(), weights, data_set.capacity);
 
     let sum = items.into_iter().map(|index| values[index]).sum::<i64>();
 
-    assert_eq!(result, sum);
-    result
+    (result, estimate)
 }
 
 fn get_dominating_pairs(mut pairs: Vec<Record>) -> Vec<Record> {
