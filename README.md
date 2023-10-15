@@ -6,6 +6,8 @@ Rust implmentation of various approximation algorithms:
 - FPTAS kanpsack
 - Dynamic knapsack
 
+Uses Blossom V algortihm from `Vladimir Kolmogorov. "Blossom V: A new implementation of a minimum cost perfect matching algorithm." In Mathematical Programming Computation (MPC), July 2009, 1(1):43-67.`. Source code and license may be found at /approx_algorithms/lib
+
 ## Running algortihms
 To run bnechmarking tests, go to Rust project folder:
 ```bash
