@@ -5,16 +5,8 @@ use approx_algorithms::knapsack::helpers::helpers::{
 };
 
 fn main() {
-    // // run_greedy_kp();
+    run_greedy_kp();
     run_fptas_kp(0.1);
-    // run_dynamic_kp();
-    // run_dynamic_weight_kp();
+    run_dynamic_kp();
+    run_dynamic_weight_kp();
 }
-
-// fn test() {
-//     let path = "knapPI_3_100_10000";
-//     let data_sets = get_data_set(&format!("../datasets/knapsack/{}.csv", path));
-//     let last = data_sets.into_iter().for_each(|set| {
-//         fptas_knapsack(set, 0.4);
-//     });
-// }

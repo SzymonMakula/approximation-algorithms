@@ -119,14 +119,14 @@ pub fn run_greedy_kp() {
 
 pub fn run_dynamic_kp() {
     let DATA_SETS_PATHS = vec![
-        // "knapPI_1_100_1000",
+        "knapPI_1_100_1000",
         "knapPI_1_100_10000",
-        // "knapPI_1_1000_1000",
-        // "knapPI_1_1000_10000",
-        // "knapPI_3_100_1000",
-        // "knapPI_3_100_10000",
-        // "knapPI_3_1000_1000",
-        // "knapPI_3_1000_10000",
+        "knapPI_1_1000_1000",
+        "knapPI_1_1000_10000",
+        "knapPI_3_100_1000",
+        "knapPI_3_100_10000",
+        "knapPI_3_1000_1000",
+        "knapPI_3_1000_10000",
     ];
     for path in DATA_SETS_PATHS {
         let data_sets = get_data_set(&format!("../datasets/knapsack/{}.csv", path));
@@ -172,14 +172,14 @@ pub fn run_dynamic_kp() {
 
 pub fn run_dynamic_weight_kp() {
     let DATA_SETS_PATHS = vec![
-        // "knapPI_1_100_1000",
-        // "knapPI_1_100_10000",
-        // "knapPI_1_1000_1000",
+        "knapPI_1_100_1000",
+        "knapPI_1_100_10000",
+        "knapPI_1_1000_1000",
         "knapPI_1_1000_10000",
-        // "knapPI_3_100_1000",
-        // "knapPI_3_100_10000",
+        "knapPI_3_100_1000",
+        "knapPI_3_100_10000",
         "knapPI_3_1000_1000",
-        // "knapPI_3_1000_10000",
+        "knapPI_3_1000_10000",
     ];
 
     for path in DATA_SETS_PATHS {
@@ -230,14 +230,14 @@ pub fn run_dynamic_weight_kp() {
 
 pub fn run_fptas_kp(e: f64) {
     let DATA_SETS_PATHS = vec![
-        // "knapPI_1_100_1000",
-        // "knapPI_1_100_10000",
+        "knapPI_1_100_1000",
+        "knapPI_1_100_10000",
         "knapPI_1_1000_1000",
-        // "knapPI_1_1000_10000",
-        // "knapPI_3_100_1000",
+        "knapPI_1_1000_10000",
+        "knapPI_3_100_1000",
         "knapPI_3_100_10000",
-        // "knapPI_3_1000_1000",
-        // "knapPI_3_1000_10000",
+        "knapPI_3_1000_1000",
+        "knapPI_3_1000_10000",
     ];
     for path in DATA_SETS_PATHS {
         let data_sets = get_data_set(&format!("../datasets/knapsack/{}.csv", path));
