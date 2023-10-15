@@ -1,1 +1,8 @@
 /target
+node_modules
+dist
+blossom_out.txt
+env
+approx_algorithms/target
+target
+.env
